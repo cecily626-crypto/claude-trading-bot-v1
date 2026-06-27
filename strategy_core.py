@@ -1,4 +1,4 @@
- """
+"""
 Self-contained strategy logic for the live bot (no historical-data dependencies).
 Indicators + the confirmed long/short TREND and BREAKOUT strategies, identical to
 the backtested versions.
