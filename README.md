@@ -176,5 +176,3 @@ A：编辑 `bot.yml`，把 `*/30 * * * *` 改成 `0 * * * *`（每小时）。
 ## 附录：`bot.yml` 的内容
 
 如果你在文件夹里找不到隐藏的 `.github/workflows/bot.yml`，第二步 2.4 里要粘贴的就是它，内容见本仓库该文件。它的作用就是告诉 GitHub“每 30 分钟运行一次机器人”。
-
-<!-- connection-test 2026-06-26 Claude-in-Chrome semi-auto OK -->
