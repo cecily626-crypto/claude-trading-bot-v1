@@ -41,7 +41,13 @@ def load_state():
     if os.path.exists(STATE_FILE):
         return json.load(open(STATE_FILE))
     return {"cash": START, "start": START, "positions": {}, "realized": 0.0,
-            "closed": [], "last_report": "", "inited": False}
+            "closed": [], "log": [], "last_report": "", "inited": False}
+
+
+def _logev(state, **kw):
+    kw["ts"] = datetime.datetime.utcnow().isoformat()
+    state.setdefault("log", []).append(kw)
+    state["log"] = state["log"][-800:]      # keep it bounded
 
 
 def save_state(s):
@@ -87,6 +93,7 @@ def run(dry_run=False):
                     ret = (px / held["entry"] - 1) * held_dir
                     st["realized"] += pnl
                     st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl})
+                    _logev(st, ev="close", sym=coin, dir=held_dir, px=px, pnl=round(pnl, 2), ret=round(ret, 4))
                     fills.append(f"🔵 平{DIRTXT[held_dir]} *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` ({ret*100:+.1f}%)")
                     st["positions"].pop(coin, None)
                 # open new
@@ -98,6 +105,7 @@ def run(dry_run=False):
                         st["cash"] -= units * px + abs(units) * px * (FEE + SLIP)
                         st["positions"][coin] = {"dir": desired, "units": units, "entry": px,
                                                  "stop": ev["stop"], "last_px": px}
+                        _logev(st, ev="open", sym=coin, dir=desired, px=px, notional=round(notional, 2))
                         side = "🟢 开多" if desired > 0 else "🔴 开空"
                         fills.append(f"{side} *{coin.upper()}* @ `{px:.6g}`  仓位 `${notional:.0f}` "
                                      f"({notional/eq*100:.0f}%)  止损 `{ev['stop']:.6g}`")
