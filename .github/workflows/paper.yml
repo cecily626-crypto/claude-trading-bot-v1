@@ -1,0 +1,34 @@
+name: paper-account
+
+# 每 30 分钟跑一次虚拟账户（跟随策略信号、用 LBank 真实价虚拟下单，不碰真钱）
+# 故意错开到 :15 和 :45，避开信号机器人(:00/:30)，防止两个任务同时提交仓库相互冲突
+on:
+  schedule:
+    - cron: "15,45 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy
+      - name: run paper account
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PAPER_START: "2000"
+        run: python paper_bot.py
+      - name: save paper account
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add paper_account.json && git commit -m "paper account update" || true
+          git pull --rebase --autostash || true
+          git push || true
