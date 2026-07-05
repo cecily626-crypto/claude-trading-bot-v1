@@ -1,0 +1,25 @@
+name: regime-backtest
+
+on:
+  workflow_dispatch:        # 手动触发：Actions -> regime-backtest -> Run workflow
+  schedule:
+    - cron: "0 2 * * 0"     # 每周日 02:00 UTC（北京时间周日 10:00），周报前出结果
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: EMA55 vs EMA100 对比回测
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python backtest_regime.py
