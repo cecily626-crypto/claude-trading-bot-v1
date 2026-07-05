@@ -49,8 +49,8 @@ def trend_ls(df, fast=20, slow=50, regime=100, atr_period=14, stop_mult=3.0, sho
             "atr_pct": (a / c).to_numpy(), "aux": {"ema_regime": er}}
 
 
-def breakout_ls(df, breakout=20, regime=100, atr_period=14, stop_mult=2.5, mom=20, short_gap=0.03,
-                use_filters=True, rsi_max=75.0, surge_max=0.25, ext_atr=1.5, vol_mult=1.2):
+def breakout_ls(df, breakout=55, regime=100, atr_period=14, stop_mult=2.5, mom=20, short_gap=0.03,
+                use_filters=True, rsi_max=65.0, surge_max=0.25, ext_atr=1.5, vol_mult=1.2):
     """Memecoins: long on new-high breakout in up-regime; short on new-low
     breakdown in a CONFIRMED downtrend (price >= short_gap below EMA(regime)).
 
@@ -64,6 +64,13 @@ def breakout_ls(df, breakout=20, regime=100, atr_period=14, stop_mult=2.5, mom=2
       F4 the breakout/breakdown bar must print volume > vol_mult * 20-bar average
          volume. Low-volume breakouts (the USELESS -9.9%/-9.1% and GORK -12.0%
          week-1 whipsaws) are skipped. Applies to BOTH longs and shorts.
+
+    PATCH 3 (2026-07-05, 11-month deep backtest, backtest_deep.py run #2):
+      breakout 20 -> 55 and rsi_max 75 -> 65. The combo was the ONLY config
+      (of 18 tested) profitable in BOTH halves of the 11-month window:
+      FULL PF 1.29 -> 1.65, recent-half PF 0.69 (-127%) -> 1.13 (+20%).
+      It cuts the <=1-day "instant death" trades that attribution showed were
+      the main leak (12.3% win rate, -187% contribution).
     """
     c = df["close"]
     er = ema(c, regime)
