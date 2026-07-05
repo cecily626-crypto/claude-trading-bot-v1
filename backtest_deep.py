@@ -36,7 +36,7 @@ TREND_SET = ["btc", "eth"]
 ALT_SET = ["doge", "sol", "pepe", "bonk", "eigen", "wif", "shib", "floki", "popcat"]
 
 BASE = {"regime": 100, "breakout": 20, "stop": 2.5, "stop_trend": 3.0,
-        "vol": 1.2, "rsi": 75.0, "long_only": False}
+        "vol": 1.2, "rsi": 75.0, "long_only": False, "stop_exit_only": False}
 
 VARIANTS = [
     ("baseline(当前参数)", {}),
@@ -54,6 +54,9 @@ VARIANTS = [
     ("只多不空", {"long_only": True}),
     ("只多+regime=200", {"long_only": True, "regime": 200}),
     ("只多+breakout=55", {"long_only": True, "breakout": 55}),
+    ("仅止损出场", {"stop_exit_only": True}),
+    ("组合:bo55+rsi65", {"breakout": 55, "rsi": 65.0}),
+    ("组合:bo55+rsi65+仅止损", {"breakout": 55, "rsi": 65.0, "stop_exit_only": True}),
 ]
 
 
@@ -116,7 +119,11 @@ def simulate(df, kind, p):
             else:
                 locked = 0
         if des != dir_:
-            pending = des
+            # stop_exit_only: once in a position, ignore target changes —
+            # the ONLY exit is the ATR trailing stop (kills the flip/regime
+            # exit, which attribution showed was 4% win rate / PF 0.01).
+            if dir_ == 0 or not p["stop_exit_only"]:
+                pending = des
     return trades
 
 
@@ -140,7 +147,9 @@ def send(text):
     if not TOKEN or not CHAT_ID:
         return None
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    data = urllib.parse.urlencode({"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown",
+    # plain text (no parse_mode): stats lines contain Markdown-hostile chars
+    # which made Telegram return HTTP 400 on the first run
+    data = urllib.parse.urlencode({"chat_id": CHAT_ID, "text": text,
                                    "disable_web_page_preview": "true"}).encode()
     with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=20) as r:
         return json.loads(r.read().decode())
