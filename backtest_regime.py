@@ -1,18 +1,19 @@
 """
-EMA-regime A/B backtest: breakout_ls with regime=55 vs regime=100.
+EMA-regime A/B backtest: regime EMA55 vs EMA100 as the entry trend filter.
 
-Purpose (2026-07-05 week-1 paper review): decide with data — not by feel —
-whether the memecoin breakout strategy should use a faster EMA55 trend filter
-(earlier entries, more false signals) or keep the current EMA100.
+Universe (2026-07-05, user-selected):
+  TREND  (trend_ls):    btc, eth
+  ALTS   (breakout_ls): doge, sol, zec, pepe, bonk, eigen, wif, shib, floki, popcat
 
-Method: for every coin in the current MEMECOINS universe, pull the last 300
-4h bars (~50 days) from LBank and replay the SAME bar-close state machine the
-live bot uses (enter next open, ATR trailing stop, fees+slippage), once per
-regime setting. Prints a comparison table; sends a Telegram summary when
+Data: LBank 4h klines, 640 bars (~107 days; after ~100-bar indicator warmup this
+is an effective ~3-month trade window). Same bar-close state machine as the live
+bot (enter next open, ATR trailing stop, fees + slippage), run once per regime.
+
+Prints a per-coin + aggregate comparison; sends a Telegram summary when
 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID are set.
 
 Run: python backtest_regime.py            (in GitHub Actions: backtest.yml)
-NOTE: ~50 days is a short window — treat results as directional evidence,
+NOTE: single window, no walk-forward — treat results as directional evidence,
 re-run weekly and only switch after consistent outperformance.
 """
 import os
@@ -21,19 +22,23 @@ import time
 import urllib.request
 import urllib.parse
 
-from exchange_data import fetch_klines, MEMECOINS
-from strategy_core import breakout_ls
+from exchange_data import fetch_klines
+from strategy_core import trend_ls, breakout_ls
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 KTYPE = os.environ.get("SIGNAL_KTYPE", "hour4")
+BARS = int(os.environ.get("BACKTEST_BARS", "640"))
 FEE, SLIP = 0.0002, 0.0005
 REGIMES = (55, 100)
 
+TREND_SET = ["btc", "eth"]
+ALT_SET = ["doge", "sol", "zec", "pepe", "bonk", "eigen", "wif", "shib", "floki", "popcat"]
 
-def simulate(df, regime):
+
+def simulate(df, kind, regime):
     """Replay the live state machine over closed bars; return per-trade returns."""
-    sig = breakout_ls(df, regime=regime)
+    sig = trend_ls(df, regime=regime) if kind == "trend" else breakout_ls(df, regime=regime)
     target, atr_a, mult = sig["target"], sig["atr"], sig["stop_mult"]
     o, h, l = (df[x].to_numpy() for x in ("open", "high", "low"))
     n = len(df)
@@ -102,34 +107,40 @@ def send(text):
 
 
 def main():
+    universe = [("trend", c) for c in TREND_SET] + [("breakout", c) for c in ALT_SET]
     all_trades = {r: [] for r in REGIMES}
     per_coin = {r: {} for r in REGIMES}
-    for coin in MEMECOINS:
+    for kind, coin in universe:
         try:
-            df = fetch_klines(coin, ktype=KTYPE, size=300)
-            if len(df) < 120:
+            df = fetch_klines(coin, ktype=KTYPE, size=BARS)
+            got = len(df)
+            if got < 150:
+                print(f"[warn] {coin}: only {got} bars, skipped")
                 continue
             for r in REGIMES:
-                tr = simulate(df, r)
+                tr = simulate(df, kind, r)
                 all_trades[r].extend(tr)
                 per_coin[r][coin] = stats(tr)
+            print(f"[ok] {coin}: {got} bars ({kind})")
             time.sleep(0.25)
         except Exception as e:
             print(f"[warn] {coin}: {e}")
 
-    lines = ["*EMA regime 回测*（LBank 4h · 最近300根 ≈ 50天 · 含手续费滑点）"]
+    lines = [f"*EMA regime 回测*（LBank {KTYPE} · {BARS}根 ≈ 3个月+warmup · BTC/ETH trend + 10 alts breakout · 含手续费滑点）"]
     for r in REGIMES:
         s = stats(all_trades[r])
         line = (f"EMA{r}: {s['n']} 笔  胜率 {s['win']:.1f}%  PF {s['pf']:.2f}  "
                 f"累计收益 {s['tot']:+.1f}%（单笔等权）")
         print(line)
         lines.append(line)
-    print("\nper-coin (EMA55 | EMA100)  n/win%/PF:")
-    for coin in sorted(per_coin[REGIMES[0]]):
+    print(f"\n{'coin':10s} {'EMA55 n/win%/PF/tot%':>26s} | {'EMA100 n/win%/PF/tot%':>26s}")
+    for kind, coin in universe:
+        if coin not in per_coin[REGIMES[0]]:
+            continue
         a, b = per_coin[REGIMES[0]][coin], per_coin[REGIMES[1]][coin]
-        print(f"  {coin:10s} {a['n']:3d}/{a['win']:5.1f}/{a['pf']:5.2f} | "
-              f"{b['n']:3d}/{b['win']:5.1f}/{b['pf']:5.2f}")
-    lines.append("_窗口较短，仅作方向性证据；连续数周占优才切换参数_")
+        print(f"{coin:10s} {a['n']:3d}/{a['win']:5.1f}/{a['pf']:5.2f}/{a['tot']:+7.1f} | "
+              f"{b['n']:3d}/{b['win']:5.1f}/{b['pf']:5.2f}/{b['tot']:+7.1f}")
+    lines.append("_单窗口回测，仅作方向性证据；连续数周占优才切换参数_")
     ok = send("\n".join(lines))
     if ok is not None:
         print("telegram sent:", ok.get("ok"))
