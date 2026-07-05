@@ -1,0 +1,23 @@
+name: deep-backtest
+
+on:
+  workflow_dispatch:        # 手动触发：Actions -> deep-backtest -> Run workflow
+
+jobs:
+  deep-backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 深度回测（11个月 + 亏损归因 + 参数敏感性）
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python backtest_deep.py
