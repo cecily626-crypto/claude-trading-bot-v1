@@ -22,12 +22,17 @@ COLS = ["open", "high", "low", "close", "volume"]
 # A broad curated list of memecoin USDT pairs that exist on LBank. The breakout
 # long/short strategy is applied to ALL of these (not just the backtested DOGE/PEPE).
 # Add or remove freely — or set MEMECOINS = lbank_pairs(meme_only=True) to auto-pull.
+#
+# 2026-07-05 week-1 paper review: removed ultra-low-liquidity microcaps
+# (udoge, shibdoge, caw, manyu, babyshark, kekius). UDOGE short alone lost
+# -113.79 USDT (-116%) on a microcap squeeze. Re-adding any of them requires a
+# separate liquidity check first.
 MEMECOINS = [
     "doge", "shib", "pepe", "floki", "bonk", "wif", "mog", "brett", "popcat",
     "neiro", "pnut", "moodeng", "fartcoin", "mew", "dogs", "turbo", "memecoin",
-    "baby", "elon", "caw", "wojak", "bobo", "snek", "troll", "gork", "useless",
-    "spx", "giga", "ban", "chillguy", "apepe", "kekius", "hippo", "goatseus",
-    "pengu", "mubarak", "manyu", "babyshark", "udoge", "shibdoge", "labubu",
+    "baby", "elon", "wojak", "bobo", "snek", "troll", "gork", "useless",
+    "spx", "giga", "ban", "chillguy", "apepe", "hippo", "goatseus",
+    "pengu", "mubarak", "labubu",
 ]
 # Large caps that use the TREND long/short strategy instead.
 TREND_COINS = ["btc", "eth"]

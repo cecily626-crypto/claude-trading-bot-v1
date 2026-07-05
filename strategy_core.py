@@ -50,7 +50,7 @@ def trend_ls(df, fast=20, slow=50, regime=100, atr_period=14, stop_mult=3.0, sho
 
 
 def breakout_ls(df, breakout=20, regime=100, atr_period=14, stop_mult=2.5, mom=20, short_gap=0.03,
-                use_filters=True, rsi_max=75.0, surge_max=0.25, ext_atr=1.5):
+                use_filters=True, rsi_max=75.0, surge_max=0.25, ext_atr=1.5, vol_mult=1.2):
     """Memecoins: long on new-high breakout in up-regime; short on new-low
     breakdown in a CONFIRMED downtrend (price >= short_gap below EMA(regime)).
 
@@ -59,6 +59,11 @@ def breakout_ls(df, breakout=20, regime=100, atr_period=14, stop_mult=2.5, mom=2
       F1 single-bar surge (close/open-1) > surge_max   (vertical pump)
       F2 price extended > ext_atr * ATR above the breakout line   (chased too far)
       F3 RSI(14) > rsi_max at the breakout   (overbought / late)
+
+    PATCH 2 (2026-07-05, week-1 paper review): volume confirmation, default ON —
+      F4 the breakout/breakdown bar must print volume > vol_mult * 20-bar average
+         volume. Low-volume breakouts (the USELESS -9.9%/-9.1% and GORK -12.0%
+         week-1 whipsaws) are skipped. Applies to BOTH longs and shorts.
     """
     c = df["close"]
     er = ema(c, regime)
@@ -68,10 +73,12 @@ def breakout_ls(df, breakout=20, regime=100, atr_period=14, stop_mult=2.5, mom=2
     r = rsi(c, 14)
     surge = c / df["open"] - 1
     ext = (c - dh) / a
+    vol_ok = df["volume"] > vol_mult * df["volume"].rolling(20).mean()
     long_ok = (c > dh) & (c > er) & (m > 0)
-    if use_filters:
-        long_ok = long_ok & (r < rsi_max) & (surge < surge_max) & (ext < ext_atr)
     short_ok = (c < dl) & (c < er * (1 - short_gap)) & (m < 0)
+    if use_filters:
+        long_ok = long_ok & (r < rsi_max) & (surge < surge_max) & (ext < ext_atr) & vol_ok
+        short_ok = short_ok & vol_ok
     raw = pd.Series(np.where(long_ok, 1, np.where(short_ok, -1, np.nan)), index=c.index)
     raw[(c < er) & raw.isna() & (raw.ffill() == 1)] = 0
     raw[(c > er) & raw.isna() & (raw.ffill() == -1)] = 0

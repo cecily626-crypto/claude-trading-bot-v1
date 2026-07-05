@@ -8,6 +8,11 @@ START_EQUITY USDT, and reports fills + a once-a-day equity snapshot to Telegram.
 
 State persists in paper_account.json (committed back by the workflow).
 
+2026-07-05 (week-1 review): added HARD STOP + loss circuit breaker — the stored
+stop is now enforced on every run, and any position whose unrealized loss exceeds
+MAX_POS_LOSS of its entry notional is force-closed. Before this, stops were only
+implied by the 4h state machine and a UDOGE short ran to -116% unchecked.
+
 ENV: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, optional PAPER_START (default 2000).
 Run: python paper_bot.py --dry-run   (prints, sends nothing)
      python paper_bot.py
@@ -34,6 +39,7 @@ FEE, SLIP = 0.0002, 0.0005                       # LBank taker 0.02% + slippage
 TARGET_VOL = {"trend": 0.6, "breakout": 0.5}
 MAX_FRAC = {"trend": 0.40, "breakout": 0.12}     # cap per position (% of equity)
 MIN_TICKET = 20.0                                # don't bother below $20
+MAX_POS_LOSS = 0.15                              # circuit breaker: force-close at -15% of entry notional
 DIRTXT = {1: "多", -1: "空"}
 
 
@@ -83,6 +89,34 @@ def run(dry_run=False):
             desired = ev["dir"]
             if held:
                 held["last_px"] = px                       # mark to market
+
+            # --- HARD STOP + loss circuit breaker (2026-07-05 week-1 review) --
+            # Enforce the stored stop against the live price on EVERY run instead
+            # of waiting for the 4h state machine, and force-close any position
+            # whose unrealized loss exceeds MAX_POS_LOSS of its entry notional
+            # (UDOGE lesson: a microcap short ran -116% with no hard exit).
+            # After a forced close we do NOT re-enter on the same run.
+            if held:
+                unreal = held["units"] * (px - held["entry"])
+                entry_notional = abs(held["units"]) * held["entry"]
+                stop_hit = (held_dir > 0 and px <= held["stop"]) or \
+                           (held_dir < 0 and px >= held["stop"])
+                fuse_hit = unreal <= -MAX_POS_LOSS * entry_notional
+                if stop_hit or fuse_hit:
+                    pnl = unreal
+                    st["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
+                    ret = (px / held["entry"] - 1) * held_dir
+                    st["realized"] += pnl
+                    st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl})
+                    why = "硬止损" if stop_hit else f"熔断{MAX_POS_LOSS*100:.0f}%"
+                    _logev(st, ev="close", sym=coin, dir=held_dir, px=px,
+                           pnl=round(pnl, 2), ret=round(ret, 4), why=why)
+                    fills.append(f"⛔ {why} 平{DIRTXT[held_dir]} *{coin.upper()}* @ `{px:.6g}`  "
+                                 f"盈亏 `{pnl:+.2f}` ({ret*100:+.1f}%)")
+                    st["positions"].pop(coin, None)
+                    time.sleep(0.2)
+                    continue
+
             eq = equity_of(st)
 
             if desired != held_dir:
