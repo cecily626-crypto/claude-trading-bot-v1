@@ -120,7 +120,7 @@ systemctl daemon-reload
 systemctl enable --now trading-bot.timer bot-heartbeat.timer > /dev/null 2>&1
 
 echo "==== [7/7] 基础安全加固 ==================================="
-ufw --force allow OpenSSH > /dev/null
+ufw allow OpenSSH > /dev/null
 ufw --force enable > /dev/null
 apt-get install -y -qq unattended-upgrades > /dev/null
 
