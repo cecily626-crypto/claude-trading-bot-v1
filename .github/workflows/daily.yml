@@ -1,6 +1,6 @@
 name: daily-review
 
-# 每天 00:00 UTC（= 北京时间早上 8 点）推送昨日交易复盘
+# 每天 00:00 UTC（= 北京时间早上 8 点）推送昨日交易复盘（1.0 多空账户 + 2.0 做空账户）
 # GitHub 定时偶有几分钟到十几分钟延迟，属正常
 on:
   schedule:
@@ -19,4 +19,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python daily_review.py
+        run: |
+          python daily_review.py
+          python daily_review_short.py
