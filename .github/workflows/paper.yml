@@ -1,10 +1,8 @@
 name: paper-account
 
-# 每 30 分钟跑一次虚拟账户（跟随策略信号、用 LBank 真实价虚拟下单，不碰真钱）
-# 故意错开到 :15 和 :45，避开信号机器人(:00/:30)，防止两个任务同时提交仓库相互冲突
+# 2026-07-06 Phase 1 切换: 调度已迁移到 VPS (每 5 分钟, 见 deploy/README_DEPLOY.md)
+# 此 workflow 仅保留手动触发作为备用通道, 避免与 VPS 双跑造成重复消息和状态冲突
 on:
-  schedule:
-    - cron: "15,45 * * * *"
   workflow_dispatch:
 
 permissions:

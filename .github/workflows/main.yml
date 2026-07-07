@@ -1,8 +1,8 @@
 name: signal-bot
 
+# 2026-07-06 Phase 1 切换: 调度已迁移到 VPS (每 5 分钟, 见 deploy/README_DEPLOY.md)
+# 此 workflow 仅保留手动触发作为备用通道, 避免与 VPS 双跑造成重复消息和状态冲突
 on:
-  schedule:
-    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
