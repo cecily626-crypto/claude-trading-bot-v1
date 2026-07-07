@@ -169,15 +169,18 @@ def run(dry_run=False):
             + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else ""))
         st["last_report"] = today
 
+    save_state(st)                       # 先落盘: 消息发送失败绝不能导致交易状态丢失/重放
     if msgs:
         text = "\n\n".join(msgs) + "\n\n_虚拟账户·非投资建议_"
         if dry_run:
             print(text)
         else:
-            print("sent:", send(text).get("ok"))
+            flush_pending()              # 补发上一轮未送达的消息
+            print("sent:", send_reliable(text).get("ok"))
     else:
         print(f"no paper events (equity ${eq:.2f}, {len(st['positions'])} positions)")
-    save_state(st)
+        if not dry_run:
+            flush_pending()
 
 
 def send(text):
@@ -188,6 +191,42 @@ def send(text):
                                    "disable_web_page_preview": "true"}).encode()
     with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=20) as r:
         return json.loads(r.read().decode())
+
+
+# --- 送达保证 (2026-07-06): 每笔开平仓消息必须到达 Telegram -----------------
+# 失败重试 3 次; 仍失败则写入本地待发队列, 下一轮运行开头自动补发。
+PENDING = os.path.join(os.path.dirname(__file__), "pending_msgs.json")
+
+
+def send_reliable(text):
+    for _ in range(3):
+        try:
+            return send(text)
+        except Exception as e:
+            print(f"[warn] telegram send failed, retrying: {e}")
+            time.sleep(2)
+    q = []
+    if os.path.exists(PENDING):
+        try:
+            q = json.load(open(PENDING))
+        except Exception:
+            q = []
+    q.append(text)
+    json.dump(q, open(PENDING, "w"))
+    print(f"[warn] telegram unreachable, {len(q)} message(s) queued for retry")
+    return {"ok": False}
+
+
+def flush_pending():
+    if not os.path.exists(PENDING):
+        return
+    try:
+        q = json.load(open(PENDING))
+    except Exception:
+        q = []
+    os.remove(PENDING)
+    for t in q:
+        send_reliable("(补发) " + t)
 
 
 if __name__ == "__main__":

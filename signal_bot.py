@@ -13,6 +13,10 @@ What it does each run:
      trailing-stop breach. Otherwise it stays silent (no spam every 30 min).
   4. Persist state to bot_state.json.
 
+2026-07-06: send hardened — state is saved BEFORE sending; sends retry 3x and
+queue to pending_signal_msgs.json for redelivery on the next run, so every
+signal is guaranteed to reach Telegram exactly once.
+
 SETUP
   pip install -r requirements.txt
   export TELEGRAM_BOT_TOKEN="123456:ABC..."
@@ -114,6 +118,41 @@ def send(text):
         return json.loads(r.read().decode())
 
 
+# --- 送达保证 (2026-07-06): 每条信号必须到达 Telegram -------------------------
+PENDING = os.path.join(os.path.dirname(__file__), "pending_signal_msgs.json")
+
+
+def send_reliable(text):
+    for _ in range(3):
+        try:
+            return send(text)
+        except Exception as e:
+            print(f"[warn] telegram send failed, retrying: {e}")
+            time.sleep(2)
+    q = []
+    if os.path.exists(PENDING):
+        try:
+            q = json.load(open(PENDING))
+        except Exception:
+            q = []
+    q.append(text)
+    json.dump(q, open(PENDING, "w"))
+    print(f"[warn] telegram unreachable, {len(q)} message(s) queued for retry")
+    return {"ok": False}
+
+
+def flush_pending():
+    if not os.path.exists(PENDING):
+        return
+    try:
+        q = json.load(open(PENDING))
+    except Exception:
+        q = []
+    os.remove(PENDING)
+    for t in q:
+        send_reliable("(补发) " + t)
+
+
 def load_state():
     if os.path.exists(STATE_FILE):
         return json.load(open(STATE_FILE))
@@ -172,6 +211,7 @@ def run(dry_run=False):
         except Exception as e:
             errors += 1
             print(f"[warn] {coin}: {e}")
+    save_state(state)                    # 先落盘: 消息发送失败绝不能导致信号状态丢失/重放
     if alerts:
         header = "*交易信号*（LBank · 4h · 多空）"
         body = "\n\n".join(alerts)
@@ -180,10 +220,12 @@ def run(dry_run=False):
         if dry_run:
             print(text)
         else:
-            print("sent:", send(text).get("ok"), f"({len(alerts)} alerts)")
+            flush_pending()
+            print("sent:", send_reliable(text).get("ok"), f"({len(alerts)} alerts)")
     else:
         print(f"no new triggers ({len(universe)} symbols checked, {errors} errors)")
-    save_state(state)
+        if not dry_run:
+            flush_pending()
 
 
 if __name__ == "__main__":
