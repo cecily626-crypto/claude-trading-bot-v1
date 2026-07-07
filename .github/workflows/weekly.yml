@@ -14,15 +14,18 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pandas numpy
-      - name: weekly review
+      - name: weekly review (v1 long/short + v2.0-short)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python weekly_review.py
+        run: |
+          python weekly_review.py
+          python weekly_review_short.py
       - name: save history
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add review_history.json || true
+          git pull --rebase --autostash || true
+          git add review_history.json review_history_short.json || true
           git commit -m "weekly review history" || true
           git push || true
