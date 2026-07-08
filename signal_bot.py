@@ -48,7 +48,7 @@ if os.environ.get("SIGNAL_MEME_ALL", "false").lower() == "true":
         MEMECOINS = [p for p in lbank_pairs(meme_only=True)]
     except Exception as _e:
         print("[warn] could not auto-list pairs, using curated MEMECOINS:", _e)
-from strategy_core import trend_ls, breakout_ls
+from strategy_core import trend_ls, breakout_ls, pullback_entry_1h
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -196,6 +196,16 @@ def run(dry_run=False):
             ev = evaluate(df, kind)
             prev = state.get(coin, {})
             prev_dir = int(prev.get("dir", 0))
+            # --- 1h 回调择时 (2026-07-08): 仅趋势币, 从空仓新开方向时等1h确认再报 ---
+            if kind == "trend" and prev_dir == 0 and ev["dir"] != 0:
+                try:
+                    d1 = fetch_klines(coin, ktype="hour1", size=300)
+                    ok1h, _ = pullback_entry_1h(d1, ev["dir"])
+                except Exception:
+                    ok1h = True
+                if not ok1h:
+                    time.sleep(0.25)
+                    continue                          # 保持空仓状态不推进, 下轮再看1h
             msg = action_message(coin, prev_dir, ev)
             # live trailing-stop breach alert (between bar closes)
             if msg is None and prev_dir != 0 and prev.get("stop"):

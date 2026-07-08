@@ -28,6 +28,7 @@ import numpy as np
 
 from exchange_data import fetch_klines, MEMECOINS, TREND_COINS
 from signal_bot import evaluate  # reuse the exact long/short state machine
+from strategy_core import pullback_entry_1h  # 1h 回调择时（4h定方向，1h定进场）
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -132,6 +133,13 @@ def run(dry_run=False):
                     st["positions"].pop(coin, None)
                 # open new
                 if desired != 0:
+                    if kind == "trend":                      # BTC/ETH: 4h定方向, 用1h回调择时进场
+                        d1 = fetch_klines(coin, ktype="hour1", size=300)
+                        ok, px1 = pullback_entry_1h(d1, desired)
+                        if not ok:
+                            time.sleep(0.2)
+                            continue                         # 方向成立但等1h回调, 本轮不进
+                        px = px1                             # 用1h收盘做更优进场价
                     gross = sum(abs(p["units"]) * p["last_px"] for p in st["positions"].values())
                     notional = min(eq * weight(kind, ev["atr"] / px), max(eq - gross, 0))
                     if notional >= MIN_TICKET:
