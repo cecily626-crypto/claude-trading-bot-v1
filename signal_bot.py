@@ -216,7 +216,7 @@ def run(dry_run=False):
         header = "*交易信号*（LBank · 4h · 多空）"
         body = "\n\n".join(alerts)
         footer = f"_{FEE_NOTE} · 非投资建议，回测优势≠未来收益_"
-        text = f"{header}\n\n{body}\n\n{footer}"
+        text = f"*《做多1.0策略》*\n\n{header}\n\n{body}\n\n{footer}"
         if dry_run:
             print(text)
         else:
