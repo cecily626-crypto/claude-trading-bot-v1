@@ -171,7 +171,7 @@ def run(dry_run=False):
 
     save_state(st)                       # 先落盘: 消息发送失败绝不能导致交易状态丢失/重放
     if msgs:
-        text = "\n\n".join(msgs) + "\n\n_虚拟账户·非投资建议_"
+        text = "*《做多1.0策略》*\n\n" + "\n\n".join(msgs) + "\n\n_虚拟账户·非投资建议_"
         if dry_run:
             print(text)
         else:
