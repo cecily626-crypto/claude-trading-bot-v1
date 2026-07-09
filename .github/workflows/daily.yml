@@ -3,8 +3,10 @@ name: daily-review
 # 每天 00:00 UTC（= 北京时间早上 8 点）推送昨日交易复盘（1.0 多空账户 + 2.0 做空账户）
 # GitHub 定时偶有几分钟到十几分钟延迟，属正常
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # 每日《昨日复盘》自动推送已停用 (2026-07-09): 8pm 实时日报已足够。
+  # 如需恢复, 取消下面 schedule 两行注释即可。
+  # schedule:
+  #   - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
