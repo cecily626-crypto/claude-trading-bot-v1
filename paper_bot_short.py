@@ -28,6 +28,7 @@ import datetime
 import urllib.request
 import urllib.parse
 import numpy as np
+import unicodedata
 
 from exchange_data import fetch_klines, MEMECOINS, TREND_COINS
 from strategy_short import breakdown_short, trend_short
@@ -221,13 +222,45 @@ def close_pos(st, coin, px, why, fills):
     ret = (px / held["entry"] - 1) * held["dir"]
     st["realized"] += pnl
     st["closed"].append({"sym": coin, "dir": held["dir"], "ret": ret, "pnl": pnl, "why": why,
-                         "entry": held["entry"], "exit": px,
+                         "entry": held["entry"], "exit": px, "opened": held.get("opened"),
                          "in": abs(held["units"]) * held["entry"], "out": abs(held["units"]) * px,
                          "ts": datetime.datetime.utcnow().isoformat()})
     _logev(st, ev="close", sym=coin, dir=held["dir"], px=px, pnl=round(pnl, 2),
            ret=round(ret, 4), why=why)
     fills.append(f"{TAG}🔵 平空 *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` "
                  f"({ret*100:+.1f}%) [{why}]")
+
+
+def _dw(s):
+    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in str(s))
+
+
+def _pad(s, n):
+    return str(s) + " " * max(0, n - _dw(s))
+
+
+def _table(headers, rows):
+    wds = [max(_dw(c) for c in col) for col in zip(*([headers] + rows))]
+    return "\n".join("  ".join(_pad(v, wds[i]) for i, v in enumerate(r)) for r in [headers] + rows)
+
+
+def _dur(opened, closed_ts=None):
+    if not opened:
+        return "—"
+    try:
+        t0 = datetime.datetime.fromisoformat(opened)
+        t1 = datetime.datetime.fromisoformat(closed_ts) if closed_ts else datetime.datetime.utcnow()
+        hh = (t1 - t0).total_seconds() / 3600.0
+        return f"{hh/24:.1f}d" if hh >= 48 else f"{hh:.1f}h"
+    except Exception:
+        return "—"
+
+
+def _g(x):
+    try:
+        return f"{x:.6g}"
+    except Exception:
+        return str(x)
 
 
 def run(dry_run=False):
@@ -274,7 +307,8 @@ def run(dry_run=False):
                         st["cash"] -= units * px + abs(units) * px * (FEE + SLIP)
                         st["positions"][coin] = {"dir": desired, "units": units, "entry": px,
                                                  "stop": ev["stop"], "tp": ev.get("tp"),
-                                                 "why": ev["why"], "last_px": px}
+                                                 "why": ev["why"], "last_px": px,
+                                                 "opened": datetime.datetime.utcnow().isoformat()}
                         _logev(st, ev="open", sym=coin, dir=desired, px=px,
                                notional=round(notional, 2), why=ev["why"])
                         fills.append(f"{TAG}🔴 开空 *{coin.upper()}* @ `{px:.6g}`  "
@@ -312,27 +346,32 @@ def run(dry_run=False):
         wins = [r for r in rets if r > 0]; losses = [r for r in rets if r <= 0]
         win = 100 * len(wins) / len(rets) if rets else float("nan")
         pf = (sum(wins) / abs(sum(losses))) if losses and sum(losses) != 0 else (99 if wins else float("nan"))
-        rep = [f"{TAG}📄 *做空模拟盘日报*\n  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)"
-               f"  ·  持仓 {len(st['positions'])} 个\n  累计已实现 `${st['realized']:+.2f}`"
-               f"  ·  已平仓 {len(rets)} 笔"
-               + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else "")]
+        rep = [f"{TAG}📄 *做空模拟盘日报*",
+               f"  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)  ·  持仓 {len(st['positions'])} 个  ·  累计已实现 `${st['realized']:+.2f}`",
+               f"  已平仓 {len(rets)} 笔" + (f"  ·  胜率 {win:.0f}%  ·  盈亏比 {pf:.2f}" if rets else "")]
         day_closes = [c for c in st["closed"] if str(c.get("ts", ""))[:10] == today]
         if day_closes:
             tot = sum(c["pnl"] for c in day_closes)
-            rep.append(f"  *今日平空 {len(day_closes)} 笔*  合计 `{tot:+.2f}`")
-            for c in day_closes:
-                rep.append(f"   平空 {c['sym'].upper()}  "
-                           f"入`${c.get('in', 0):.0f}`→出`${c.get('out', 0):.0f}`  "
-                           f"`{c['pnl']:+.2f}` ({c['ret']*100:+.1f}%)")
+            rows = [[f"平空 {c['sym'].upper()}",
+                     f"{_g(c.get('entry'))}→{_g(c.get('exit'))}",
+                     f"${c.get('in', 0):.0f}→${c.get('out', 0):.0f}",
+                     _dur(c.get('opened'), c.get('ts')),
+                     f"{c['pnl']:+.2f} ({c['ret']*100:+.1f}%)"] for c in day_closes]
+            rep.append(f"今日平空 {len(day_closes)} 笔  ·  合计 `{tot:+.2f}`")
+            rep.append("```\n" + _table(["币种", "价(入→出)", "额(入→出)", "时长", "盈亏"], rows) + "\n```")
         if st["positions"]:
-            upnl = 0.0; plines = []
+            upnl = 0.0; rows = []
             for sym, p in st["positions"].items():
                 u = p["units"] * (p["last_px"] - p["entry"]); upnl += u
                 innot = abs(p["units"]) * p["entry"]; curval = abs(p["units"]) * p["last_px"]
                 r = (p["last_px"] / p["entry"] - 1) * p["dir"]
-                plines.append(f"   空 {sym.upper()}  入`${innot:.0f}`现`${curval:.0f}`  `{u:+.2f}` ({r*100:+.1f}%)")
-            rep.append(f"  *当前持仓 {len(st['positions'])} 个*  浮盈亏合计 `{upnl:+.2f}`")
-            rep.extend(plines)
+                rows.append([f"空 {sym.upper()}",
+                             f"{_g(p['entry'])}→{_g(p['last_px'])}",
+                             f"${innot:.0f}→${curval:.0f}",
+                             _dur(p.get('opened')),
+                             f"{u:+.2f} ({r*100:+.1f}%)"])
+            rep.append(f"当前持仓 {len(st['positions'])} 个  ·  浮盈亏合计 `{upnl:+.2f}`")
+            rep.append("```\n" + _table(["币种", "价(入→现)", "额(入→现)", "时长", "浮盈亏"], rows) + "\n```")
         msgs.append("\n".join(rep))
         st["last_report"] = today
 
