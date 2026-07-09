@@ -220,7 +220,10 @@ def close_pos(st, coin, px, why, fills):
     st["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
     ret = (px / held["entry"] - 1) * held["dir"]
     st["realized"] += pnl
-    st["closed"].append({"sym": coin, "dir": held["dir"], "ret": ret, "pnl": pnl, "why": why})
+    st["closed"].append({"sym": coin, "dir": held["dir"], "ret": ret, "pnl": pnl, "why": why,
+                         "entry": held["entry"], "exit": px,
+                         "in": abs(held["units"]) * held["entry"], "out": abs(held["units"]) * px,
+                         "ts": datetime.datetime.utcnow().isoformat()})
     _logev(st, ev="close", sym=coin, dir=held["dir"], px=px, pnl=round(pnl, 2),
            ret=round(ret, 4), why=why)
     fills.append(f"{TAG}🔵 平空 *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` "
@@ -309,10 +312,28 @@ def run(dry_run=False):
         wins = [r for r in rets if r > 0]; losses = [r for r in rets if r <= 0]
         win = 100 * len(wins) / len(rets) if rets else float("nan")
         pf = (sum(wins) / abs(sum(losses))) if losses and sum(losses) != 0 else (99 if wins else float("nan"))
-        msgs.append(f"{TAG}📄 *做空模拟盘日报*\n  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)"
-                    f"  ·  持仓 {len(st['positions'])} 个\n  累计已实现 `${st['realized']:+.2f}`"
-                    f"  ·  已平仓 {len(rets)} 笔"
-                    + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else ""))
+        rep = [f"{TAG}📄 *做空模拟盘日报*\n  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)"
+               f"  ·  持仓 {len(st['positions'])} 个\n  累计已实现 `${st['realized']:+.2f}`"
+               f"  ·  已平仓 {len(rets)} 笔"
+               + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else "")]
+        day_closes = [c for c in st["closed"] if str(c.get("ts", ""))[:10] == today]
+        if day_closes:
+            tot = sum(c["pnl"] for c in day_closes)
+            rep.append(f"  *今日平空 {len(day_closes)} 笔*  合计 `{tot:+.2f}`")
+            for c in day_closes:
+                rep.append(f"   平空 {c['sym'].upper()}  "
+                           f"入`${c.get('in', 0):.0f}`→出`${c.get('out', 0):.0f}`  "
+                           f"`{c['pnl']:+.2f}` ({c['ret']*100:+.1f}%)")
+        if st["positions"]:
+            upnl = 0.0; plines = []
+            for sym, p in st["positions"].items():
+                u = p["units"] * (p["last_px"] - p["entry"]); upnl += u
+                innot = abs(p["units"]) * p["entry"]; curval = abs(p["units"]) * p["last_px"]
+                r = (p["last_px"] / p["entry"] - 1) * p["dir"]
+                plines.append(f"   空 {sym.upper()}  入`${innot:.0f}`现`${curval:.0f}`  `{u:+.2f}` ({r*100:+.1f}%)")
+            rep.append(f"  *当前持仓 {len(st['positions'])} 个*  浮盈亏合计 `{upnl:+.2f}`")
+            rep.extend(plines)
+        msgs.append("\n".join(rep))
         st["last_report"] = today
 
     save_state(st)                      # state FIRST, messages second

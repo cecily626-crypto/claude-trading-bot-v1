@@ -108,8 +108,11 @@ def run(dry_run=False):
                     st["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
                     ret = (px / held["entry"] - 1) * held_dir
                     st["realized"] += pnl
-                    st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl})
                     why = "硬止损" if stop_hit else f"熔断{MAX_POS_LOSS*100:.0f}%"
+                    st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl,
+                                         "entry": held["entry"], "exit": px,
+                                         "in": abs(held["units"]) * held["entry"], "out": abs(held["units"]) * px,
+                                         "ts": datetime.datetime.utcnow().isoformat(), "why": why})
                     _logev(st, ev="close", sym=coin, dir=held_dir, px=px,
                            pnl=round(pnl, 2), ret=round(ret, 4), why=why)
                     fills.append(f"⛔ {why} 平{DIRTXT[held_dir]} *{coin.upper()}* @ `{px:.6g}`  "
@@ -127,7 +130,10 @@ def run(dry_run=False):
                     st["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
                     ret = (px / held["entry"] - 1) * held_dir
                     st["realized"] += pnl
-                    st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl})
+                    st["closed"].append({"sym": coin, "dir": held_dir, "ret": ret, "pnl": pnl,
+                                         "entry": held["entry"], "exit": px,
+                                         "in": abs(held["units"]) * held["entry"], "out": abs(held["units"]) * px,
+                                         "ts": datetime.datetime.utcnow().isoformat(), "why": "离场"})
                     _logev(st, ev="close", sym=coin, dir=held_dir, px=px, pnl=round(pnl, 2), ret=round(ret, 4))
                     fills.append(f"🔵 平{DIRTXT[held_dir]} *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` ({ret*100:+.1f}%)")
                     st["positions"].pop(coin, None)
@@ -171,10 +177,28 @@ def run(dry_run=False):
         wins = [r for r in rets if r > 0]; losses = [r for r in rets if r <= 0]
         win = 100 * len(wins) / len(rets) if rets else float("nan")
         pf = (sum(wins) / abs(sum(losses))) if losses and sum(losses) != 0 else (99 if wins else float("nan"))
-        msgs.append(
-            f"📄 *模拟盘日报*\n  净值 `${eq:.2f}` ({pnl_pct*100:+.1f}%)  ·  持仓 {len(st['positions'])} 个\n"
-            f"  累计已实现 `${st['realized']:+.2f}`  ·  已平仓 {len(rets)} 笔"
-            + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else ""))
+        rep = [f"📄 *模拟盘日报*\n  净值 `${eq:.2f}` ({pnl_pct*100:+.1f}%)  ·  持仓 {len(st['positions'])} 个\n"
+               f"  累计已实现 `${st['realized']:+.2f}`  ·  已平仓 {len(rets)} 笔"
+               + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else "")]
+        day_closes = [c for c in st["closed"] if str(c.get("ts", ""))[:10] == today]
+        if day_closes:
+            tot = sum(c["pnl"] for c in day_closes)
+            rep.append(f"  *今日平仓 {len(day_closes)} 笔*  合计 `{tot:+.2f}`")
+            for c in day_closes:
+                rep.append(f"   平{DIRTXT.get(c['dir'], '?')} {c['sym'].upper()}  "
+                           f"入`${c.get('in', 0):.0f}`→出`${c.get('out', 0):.0f}`  "
+                           f"`{c['pnl']:+.2f}` ({c['ret']*100:+.1f}%)")
+        if st["positions"]:
+            upnl = 0.0; plines = []
+            for sym, p in st["positions"].items():
+                u = p["units"] * (p["last_px"] - p["entry"]); upnl += u
+                innot = abs(p["units"]) * p["entry"]; curval = abs(p["units"]) * p["last_px"]
+                r = (p["last_px"] / p["entry"] - 1) * p["dir"]
+                plines.append(f"   {DIRTXT.get(p['dir'], '?')} {sym.upper()}  "
+                              f"入`${innot:.0f}`现`${curval:.0f}`  `{u:+.2f}` ({r*100:+.1f}%)")
+            rep.append(f"  *当前持仓 {len(st['positions'])} 个*  浮盈亏合计 `{upnl:+.2f}`")
+            rep.extend(plines)
+        msgs.append("\n".join(rep))
         st["last_report"] = today
 
     save_state(st)                       # 先落盘: 消息发送失败绝不能导致交易状态丢失/重放
