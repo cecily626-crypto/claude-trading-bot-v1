@@ -29,7 +29,7 @@ import numpy as np
 
 from exchange_data import fetch_klines, MEMECOINS, TREND_COINS
 from strategy_short import breakdown_short, trend_short
-from strategy_core import blowoff_short
+from strategy_core import blowoff_short, ema
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -40,16 +40,19 @@ RT_COST = 2 * (FEE + SLIP)
 REPORT = os.path.join(os.path.dirname(__file__), "backtest_short_report.md")
 RESULTS = os.path.join(os.path.dirname(__file__), "backtest_short_results.json")
 
+# 2026-07-14 A/B: confirm=回踩确认(opt#2), __regime__=BTC大盘闸门(opt#1).
+# NOTE breakdown_short 默认 confirm=True, 所以"现行baseline"必须显式 confirm=False.
 S1_VARIANTS = [
-    ("S1a bo20/reg100/gap3/stop2.5", {}, False),
-    ("S1b bo55", {"breakout": 55}, False),
-    ("S1c reg200/gap5", {"regime": 200, "gap": 0.05}, False),
-    ("S1d stop2.0", {"stop_mult": 2.0}, False),
-    ("S1e stop3.0", {"stop_mult": 3.0}, False),
-    ("S1f 无过滤器", {"use_filters": False}, False),
-    ("S1a+仅止损出场", {}, True),
-    ("S1b+仅止损出场", {"breakout": 55}, True),
-    ("S1c+仅止损出场", {"regime": 200, "gap": 0.05}, True),
+    # ---- 现行实盘基线 (opt#2 关) ----
+    ("S1b bo55 现行(confirm off)", {"breakout": 55, "confirm": False}, True),
+    # ---- opt#2 回踩确认 ----
+    ("S1b+回踩确认 (opt#2)", {"breakout": 55, "confirm": True}, True),
+    # ---- opt#2 + opt#1 大盘闸门 ----
+    ("S1b+回踩+大盘闸门 (opt#2+#1)", {"breakout": 55, "confirm": True, "__regime__": True}, True),
+    # ---- 参考: 老 baseline (confirm off) ----
+    ("S1a bo20 (confirm off)", {"confirm": False}, False),
+    ("S1b bo55 无仅止损 (confirm off)", {"breakout": 55, "confirm": False}, False),
+    ("S1c reg200/gap5 (confirm off)", {"regime": 200, "gap": 0.05, "confirm": False}, False),
 ]
 S2_VARIANTS = [
     ("S2a surge40/rsi85/vol3/ext3 tp15/h6", {}),
@@ -232,13 +235,25 @@ def main():
     spans = [f"{df.index[0].date()}->{df.index[-1].date()}" for df in meme_data.values()]
     out(f"数据: memecoin {len(meme_data)} 个 + trend {len(trend_data)} 个, 窗口 {max(spans)}")
 
+    # BTC 大盘闸门 mask (opt#1): BTC 4h 收盘<EMA100 且 20 根动量<0 才算确认下跌
+    btc_df = trend_data.get("btc")
+    if btc_df is not None:
+        bc = btc_df["close"]
+        btc_bear = (bc < ema(bc, 100)) & (bc.pct_change(20) < 0)
+        out(f"大盘闸门: BTC 空头占比 {100*btc_bear.mean():.0f}% of window")
+    else:
+        btc_bear = None
+        out("大盘闸门: BTC 数据缺失, __regime__ 变体退化为仅回踩确认")
+
     # ---------------- S1 scan (memecoins) ----------------
     out("\n== S1 破位趋势做空 (memecoins) · FULL | H1 | H2 ==")
     s1_res = {}
     for name, over, seo in S1_VARIANTS:
         vt = []
+        over = dict(over)
+        use_regime = over.pop("__regime__", False)
         for coin, df in meme_data.items():
-            sig = breakdown_short(df, **over)
+            sig = breakdown_short(df, regime_mask=(btc_bear if use_regime else None), **over)
             vt += [dict(t, coin=coin, n=len(df)) for t in sim_target(df, sig, seo)]
         s1_res[name] = vt
         s, (sh1, sh2) = stats(vt), halves(vt)
