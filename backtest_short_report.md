@@ -1,5 +1,5 @@
 # v2.0-Short 策略回测报告
-_2026-07-15T04:49:15.261311Z · LBank hour4 · 2000 bars_
+_2026-07-15T04:55:12.829330Z · LBank hour4 · 2000 bars_
 ```
 数据: memecoin 34 个 + trend 2 个, 窗口 2026-01-31->2026-07-15
 大盘闸门: BTC 空头占比 44% of window
@@ -8,6 +8,7 @@ _2026-07-15T04:49:15.261311Z · LBank hour4 · 2000 bars_
 S1b bo55 现行(confirm off)           n= 402  win= 44.0%  PF= 1.88  tot=  +974.9%  avg= +2.43%  hold= 11 | H1 PF= 3.17 tot=+1155.6% | H2 PF= 0.69 tot= -180.7%
 S1b+回踩确认 (opt#2)                   n= 392  win= 40.3%  PF= 0.95  tot=   -55.2%  avg= -0.14%  hold= 12 | H1 PF= 1.18 tot= +113.2% | H2 PF= 0.68 tot= -168.4%
 S1b+回踩+大盘闸门 (opt#2+#1)             n= 356  win= 40.7%  PF= 0.77  tot=  -259.8%  avg= -0.73%  hold= 11 | H1 PF= 0.84 tot= -103.0% | H2 PF= 0.67 tot= -156.8%
+S1b+仅大盘闸门 (opt#1 only)             n= 360  win= 43.1%  PF= 1.79  tot=  +780.7%  avg= +2.17%  hold= 11 | H1 PF= 3.16 tot= +996.5% | H2 PF= 0.59 tot= -215.8%
 S1a bo20 (confirm off)             n= 628  win= 37.4%  PF= 1.19  tot=  +381.1%  avg= +0.61%  hold= 10 | H1 PF= 1.91 tot= +896.2% | H2 PF= 0.51 tot= -515.1%
 S1b bo55 无仅止损 (confirm off)        n= 408  win= 43.4%  PF= 1.82  tot=  +930.1%  avg= +2.28%  hold= 11 | H1 PF= 2.96 tot=+1105.4% | H2 PF= 0.69 tot= -175.2%
 S1c reg200/gap5 (confirm off)      n= 359  win= 37.6%  PF= 1.25  tot=  +306.7%  avg= +0.85%  hold= 12 | H1 PF= 1.69 tot= +487.5% | H2 PF= 0.65 tot= -180.7%
