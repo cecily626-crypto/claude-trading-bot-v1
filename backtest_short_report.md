@@ -1,5 +1,5 @@
 # v2.0-Short 策略回测报告
-_2026-07-15T04:55:12.829330Z · LBank hour4 · 2000 bars_
+_2026-07-15T05:19:10.059913Z · LBank hour4 · 2000 bars_
 ```
 数据: memecoin 34 个 + trend 2 个, 窗口 2026-01-31->2026-07-15
 大盘闸门: BTC 空头占比 44% of window
@@ -68,4 +68,11 @@ TS btc/eth                         n=  91  win= 19.8%  PF= 1.34  tot=   +37.5%  
 
 == S3 组合 (best-S1 + best-S2 + TS) ==
 S3 组合                              n= 520  win= 38.8%  PF= 1.72  tot=  +954.1%  avg= +1.83%  hold=  8 | H1 PF= 2.63 tot=+1082.0% | H2 PF= 0.81 tot= -127.8%
+
+== 仓位管理: 滚动PF自适应缩放 (基于 S1b bo55 现行(confirm off)) ==
+基线 满仓(mult=1)                    tot=  +974.9%  maxDD= -151.4%  ret/DD= 6.44  avg_size=1.00 | H1=+1155.6% H2= -180.7%
+N30 f0.8/c1.3/min0.30            tot=  +795.5%  maxDD= -153.3%  ret/DD= 5.19  avg_size=0.63 | H1= +975.7% H2= -180.1%
+N20 f0.9/c1.4/min0.25            tot=  +938.4%  maxDD= -108.8%  ret/DD= 8.62  avg_size=0.55 | H1=+1076.6% H2= -138.1%
+N40 f0.8/c1.5/min0.20            tot=  +726.1%  maxDD= -187.3%  ret/DD= 3.88  avg_size=0.55 | H1= +901.2% H2= -175.1%
+  注: tot/maxDD 为每单位敞口的可加净值; 缩放会降低总敞口, 看 ret/DD 与 H2 是否改善
 ```
