@@ -192,6 +192,60 @@ def robust_key(trades):
     return min(s1["pf"] if s1["n"] else 0.0, s2["pf"] if s2["n"] else 0.0)
 
 
+# ------------------- position sizing: rolling-PF circuit breaker --------------
+import bisect
+
+
+def _roll_pf(rets):
+    wins = sum(r for r in rets if r > 0)
+    losses = sum(r for r in rets if r <= 0)
+    return (wins / abs(losses)) if losses != 0 else (9.0 if wins > 0 else 1.0)
+
+
+def _equity_maxdd(seq):
+    """Additive equity curve from time-ordered returns -> (total, maxDD<=0), same units."""
+    eq = peak = mdd = 0.0
+    for r in seq:
+        eq += r
+        peak = max(peak, eq)
+        mdd = min(mdd, eq - peak)
+    return eq, mdd
+
+
+def size_scale(trades, N=30, pf_lo=0.8, pf_hi=1.3, mult_lo=0.3, warm=10):
+    """Sequential rolling-PF position scaling (no look-ahead). For each trade in
+    ENTRY-time order, size = linear map of the PF over the last N trades that
+    CLOSED strictly before this entry, clipped to [mult_lo, 1.0]. Cold strategy
+    (low rolling PF) -> smaller size; hot -> full size."""
+    by_entry = sorted(trades, key=lambda t: t["t0"])
+    by_exit = sorted(trades, key=lambda t: t["t1"])
+    exit_ts = [t["t1"] for t in by_exit]
+    out = []
+    for t in by_entry:
+        k = bisect.bisect_left(exit_ts, t["t0"])          # count closed before entry
+        window = by_exit[max(0, k - N):k]
+        if len(window) >= warm:
+            pf = _roll_pf([w["ret"] for w in window])
+            mult = mult_lo + (pf - pf_lo) / (pf_hi - pf_lo) * (1.0 - mult_lo)
+            mult = min(1.0, max(mult_lo, mult))
+        else:
+            mult = 1.0                                     # not enough history -> full
+        out.append(dict(t, mult=mult, wret=t["ret"] * mult))
+    return out
+
+
+def size_report(name, sized):
+    """size-weighted equity (ordered by exit) + max drawdown + H1/H2 + avg size."""
+    seq = sorted(sized, key=lambda t: t["t1"])
+    tot, mdd = _equity_maxdd([t["wret"] for t in seq])
+    h1 = 100 * sum(t["wret"] for t in sized if t["i1"] < t["n"] // 2)
+    h2 = 100 * sum(t["wret"] for t in sized if t["i1"] >= t["n"] // 2)
+    avg = sum(t["mult"] for t in sized) / len(sized) if sized else 0
+    rdd = tot / abs(mdd) if mdd != 0 else float("inf")
+    return (f"{name:32s} tot={tot*100:+8.1f}%  maxDD={mdd*100:7.1f}%  "
+            f"ret/DD={rdd:5.2f}  avg_size={avg:4.2f} | H1={h1:+7.1f}% H2={h2:+7.1f}%")
+
+
 def send(text):
     if not TOKEN or not CHAT_ID:
         return None
@@ -256,7 +310,10 @@ def main():
         use_regime = over.pop("__regime__", False)
         for coin, df in meme_data.items():
             sig = breakdown_short(df, regime_mask=(btc_bear if use_regime else None), **over)
-            vt += [dict(t, coin=coin, n=len(df)) for t in sim_target(df, sig, seo)]
+            for t in sim_target(df, sig, seo):
+                t.update(coin=coin, n=len(df),
+                         t0=df.index[t["i0"]], t1=df.index[t["i1"]])  # entry/exit时间戳
+                vt.append(t)
         s1_res[name] = vt
         s, (sh1, sh2) = stats(vt), halves(vt)
         out(fmt(name, s) + f" | H1 PF={sh1['pf']:5.2f} tot={sh1['tot']:+7.1f}% | "
@@ -315,6 +372,19 @@ def main():
     s, (sh1, sh2) = stats(s3), halves(s3)
     out(fmt("S3 组合", s) + f" | H1 PF={sh1['pf']:5.2f} tot={sh1['tot']:+7.1f}% | "
         f"H2 PF={sh2['pf']:5.2f} tot={sh2['tot']:+7.1f}%")
+
+    # ---------------- position sizing: rolling-PF adaptive scaling -----------
+    base_name = "S1b bo55 现行(confirm off)"
+    base = s1_res.get(base_name)
+    if base:
+        out(f"\n== 仓位管理: 滚动PF自适应缩放 (基于 {base_name}) ==")
+        out(size_report("基线 满仓(mult=1)",
+                        [dict(t, mult=1.0, wret=t["ret"]) for t in base]))
+        for tag, kw in [("N30 f0.8/c1.3/min0.30", dict(N=30, pf_lo=0.8, pf_hi=1.3, mult_lo=0.30)),
+                        ("N20 f0.9/c1.4/min0.25", dict(N=20, pf_lo=0.9, pf_hi=1.4, mult_lo=0.25)),
+                        ("N40 f0.8/c1.5/min0.20", dict(N=40, pf_lo=0.8, pf_hi=1.5, mult_lo=0.20))]:
+            out(size_report(tag, size_scale(base, **kw)))
+        out("  注: tot/maxDD 为每单位敞口的可加净值; 缩放会降低总敞口, 看 ret/DD 与 H2 是否改善")
     out("```")
 
     # persist
