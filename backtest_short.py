@@ -49,6 +49,8 @@ S1_VARIANTS = [
     ("S1b+回踩确认 (opt#2)", {"breakout": 55, "confirm": True}, True),
     # ---- opt#2 + opt#1 大盘闸门 ----
     ("S1b+回踩+大盘闸门 (opt#2+#1)", {"breakout": 55, "confirm": True, "__regime__": True}, True),
+    # ---- opt#1 单独 (仅大盘闸门, 回踩关) ----
+    ("S1b+仅大盘闸门 (opt#1 only)", {"breakout": 55, "confirm": False, "__regime__": True}, True),
     # ---- 参考: 老 baseline (confirm off) ----
     ("S1a bo20 (confirm off)", {"confirm": False}, False),
     ("S1b bo55 无仅止损 (confirm off)", {"breakout": 55, "confirm": False}, False),
