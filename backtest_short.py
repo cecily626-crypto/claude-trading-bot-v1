@@ -37,6 +37,7 @@ KTYPE = os.environ.get("SIGNAL_KTYPE", "hour4")
 BARS = int(os.environ.get("BACKTEST_BARS", "2000"))
 FEE, SLIP = 0.0002, 0.0005
 RT_COST = 2 * (FEE + SLIP)
+ANN = {"hour4": 365 * 6, "hour1": 365 * 24, "day1": 365}.get(KTYPE, 365 * 6)
 REPORT = os.path.join(os.path.dirname(__file__), "backtest_short_report.md")
 RESULTS = os.path.join(os.path.dirname(__file__), "backtest_short_results.json")
 
@@ -246,6 +247,44 @@ def size_report(name, sized):
             f"ret/DD={rdd:5.2f}  avg_size={avg:4.2f} | H1={h1:+7.1f}% H2={h2:+7.1f}%")
 
 
+def account_sim(trades, start=2000.0):
+    """真实$账户模拟: 按入场时间推进, 每单名义=当前净值*weight*mult (weight=波动率
+    定标 0.5/年化ATR, 夹 [5%, meme12%/trend40%]), 总敞口<=净值(无杠杆), 空单盈亏
+    notional*ret 在平仓时结算并复利. 回撤基于已实现净值. 返回(期末$, 最大回撤$, 回撤%)."""
+    MAXF = {"meme": 0.12, "trend": 0.40}
+    ev = []
+    for i, t in enumerate(trades):
+        ev.append((t["t0"], 1, i))      # open  (1 > 0 -> 同一时刻先平后开, 先释放资金)
+        ev.append((t["t1"], 0, i))      # close
+    ev.sort(key=lambda x: (x[0], x[1]))
+    realized = 0.0
+    open_notl = 0.0
+    pos = {}
+    peak = start
+    mdd = mddp = 0.0
+    for ts, typ, i in ev:
+        t = trades[i]
+        eq = start + realized
+        if typ == 0:                    # close
+            notl = pos.pop(i, 0.0)
+            open_notl -= notl
+            realized += notl * t["ret"]
+            eq = start + realized
+            peak = max(peak, eq)
+            mdd = min(mdd, eq - peak)
+            mddp = min(mddp, (eq - peak) / peak)
+        else:                           # open
+            kd = "trend" if t["coin"] in ("btc", "eth") else "meme"
+            ap = t.get("atr_pct", 0.02) or 0.02
+            w = min(MAXF[kd], max(0.05, 0.5 / (ap * (ANN ** 0.5))))
+            notl = min(eq * w * t.get("mult", 1.0), max(eq - open_notl, 0.0))
+            if notl < 20:
+                notl = 0.0
+            pos[i] = notl
+            open_notl += notl
+    return start + realized, mdd, mddp
+
+
 def send(text):
     if not TOKEN or not CHAT_ID:
         return None
@@ -312,7 +351,8 @@ def main():
             sig = breakdown_short(df, regime_mask=(btc_bear if use_regime else None), **over)
             for t in sim_target(df, sig, seo):
                 t.update(coin=coin, n=len(df),
-                         t0=df.index[t["i0"]], t1=df.index[t["i1"]])  # entry/exit时间戳
+                         t0=df.index[t["i0"]], t1=df.index[t["i1"]],
+                         atr_pct=float(sig["atr_pct"][t["i0"]]))  # 时间戳+入场波动率(算实际仓位)
                 vt.append(t)
         s1_res[name] = vt
         s, (sh1, sh2) = stats(vt), halves(vt)
@@ -385,6 +425,37 @@ def main():
                         ("N40 f0.8/c1.5/min0.20", dict(N=40, pf_lo=0.8, pf_hi=1.5, mult_lo=0.20))]:
             out(size_report(tag, size_scale(base, **kw)))
         out("  注: tot/maxDD 为每单位敞口的可加净值; 缩放会降低总敞口, 看 ret/DD 与 H2 是否改善")
+
+        # ---- 稳健性扫描: N x (floor/ceil) 网格, 看 ret/DD 是连片还是孤立尖峰 ----
+        base_full = [dict(t, mult=1.0, wret=t["ret"]) for t in base]
+        bt, bd = _equity_maxdd([t["wret"] for t in sorted(base_full, key=lambda x: x["t1"])])
+        base_rdd = bt / abs(bd) if bd else 0.0
+        Ns = [10, 15, 20, 25, 30, 40]
+        bands = [(0.8, 1.3), (0.9, 1.4), (1.0, 1.5), (1.0, 1.8)]
+        out(f"\n== 稳健性扫描: cell = ret/DD (满仓基线={base_rdd:.2f}, *=优于基线, min倍数=0.25) ==")
+        out("  N \\ floor/ceil " + "".join(f"{lo}/{hi}".rjust(10) for lo, hi in bands))
+        n_beat = 0
+        for N in Ns:
+            row = ""
+            for lo, hi in bands:
+                sd = size_scale(base, N=N, pf_lo=lo, pf_hi=hi, mult_lo=0.25)
+                tt, dd = _equity_maxdd([t["wret"] for t in sorted(sd, key=lambda x: x["t1"])])
+                r = tt / abs(dd) if dd else 0.0
+                beat = r > base_rdd
+                n_beat += beat
+                row += (f"{r:.2f}" + ("*" if beat else " ")).rjust(10)
+            out(f"  N={N:<11d}" + row)
+        out(f"  -> {len(Ns)*len(bands)} 组里 {n_beat} 组优于基线; 连成片=真本事, 零星尖峰=过拟合")
+
+        # ---- $2000 纸账户真实金额视角 (按 bot 实际仓位, 无杠杆, 复利) ----
+        out("\n== $2000 纸账户实际金额视角 (meme 5-12%/单, 无杠杆, 复利; 回撤=已实现净值) ==")
+        configs = [("满仓基线", base_full),
+                   ("N20 缩放 0.9/1.4/0.25", size_scale(base, N=20, pf_lo=0.9, pf_hi=1.4, mult_lo=0.25)),
+                   ("N15 缩放 0.9/1.4/0.25", size_scale(base, N=15, pf_lo=0.9, pf_hi=1.4, mult_lo=0.25))]
+        for nm, tr in configs:
+            fin, dd, ddp = account_sim(tr)
+            out(f"  {nm:22s} 期末 ${fin:9,.0f} ({(fin/2000-1)*100:+6.0f}%)  "
+                f"最大回撤 ${-dd:7,.0f} ({-ddp*100:4.1f}%)")
     out("```")
 
     # persist
