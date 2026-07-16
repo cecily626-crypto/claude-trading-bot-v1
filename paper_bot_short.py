@@ -28,11 +28,10 @@ import datetime
 import urllib.request
 import urllib.parse
 import numpy as np
-import unicodedata
 
 from exchange_data import fetch_klines, MEMECOINS, TREND_COINS
 from strategy_short import breakdown_short, trend_short
-from strategy_core import blowoff_short
+from strategy_core import blowoff_short, ema, rsi
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -46,13 +45,38 @@ TARGET_VOL = 0.5
 MAX_FRAC = {"meme": 0.12, "trend": 0.40}
 MIN_TICKET = 20.0
 FUSE_DD = 0.03                       # -3% intraday -> fuse
-TAG = "【2.0空】"
+TAG = "《做空2.0》"
 
 # Backtest winner (2026-07-07, LBank 4h, 34 meme + btc/eth):
 #   S1b+仅止损出场: n=400 win=43.8% PF=1.87 avg=+2.41%  (H1 2.78 / H2 0.88)
-S1_KW = {"breakout": 55}                 # regime=100, gap=0.03, stop_mult=2.5 defaults
+S1_KW = {"breakout": 55, "confirm": False}   # 回测2026-07-15: opt#2回踩确认劣化PF(1.88->0.95), 回滚现行
 S1_STOP_EXIT_ONLY = True                 # only the ATR trailing stop closes a position
 S2_KW = {}                               # S2 blowoff fade: rejected (PF 0.85), not used
+
+# ---- v2.0-Short entry gates (added 2026-07-14 after the BAN bear-trap review) ----
+# opt#1  regime gate: open NEW meme (S1) shorts only when the market proxy (BTC)
+#        is in a confirmed 4h downtrend. Existing positions & BTC/ETH trend shorts
+#        are unaffected. Fails CLOSED (no new meme shorts) if BTC data is missing.
+REGIME_GATE = False           # opt#1: 回测劣化(总收益-200pt, H2 0.69->0.59), 关闭
+REGIME_SYMBOL = "btc"
+# opt#3  15m micro-timing: skip a NEW short if 15m RSI(14) < RSI15_MIN (oversold ->
+#        bounce risk, per the BAN flush). RSI15 >= 35 opens normally (incl. >70,
+#        overbought shorts allowed). Fails OPEN (non-blocking) if 15m data is missing.
+RSI15_GATE = False            # opt#3: 未通过回测验证(入场过滤器普遍误杀趋势续跌单), 关闭
+RSI15_MIN = 35.0
+RSI15_KTYPE = "minute15"
+
+# opt#4  滚动PF自适应仓位缩放 (backtest 2026-07-15, opt-backtest-ab):
+#   用最近 PF_N 笔 meme(S1) 已平仓交易的盈利因子(PF)给"下一笔"meme空定仓位大小.
+#   冷(PF<=PF_LO) -> 仓位系数降到 PF_MULT_LO; 热(PF>=PF_HI) -> 满仓 1.0; 中间线性.
+#   系数只作用于 meme(S1) 新开仓的名义金额, 不动入场/止损/出场; BTC/ETH 趋势空不缩放.
+#   稳健性扫描: N=15~20 一整片跑赢满仓基线(ret/DD 6.4->8+); $2000 账户 +35%/回撤$503
+#   -> +40%/回撤$315. 攒够 PF_WARM 笔平仓前一律满仓. 一键开关 PF_SIZING.
+PF_SIZING = True              # 主开关: False 即退回现行满仓
+PF_N = 18                     # 回看窗口: 最近 N 笔 meme(S1) 平仓 (甜点区 15~20 的中点)
+PF_LO, PF_HI = 0.9, 1.4       # PF 下限/上限阈值
+PF_MULT_LO = 0.25             # 最小仓位系数 (最冷时)
+PF_WARM = 8                   # 已平仓不足此数 -> 满仓, 不缩放
 
 
 # ------------------------------- state --------------------------------------
@@ -221,46 +245,62 @@ def close_pos(st, coin, px, why, fills):
     st["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
     ret = (px / held["entry"] - 1) * held["dir"]
     st["realized"] += pnl
-    st["closed"].append({"sym": coin, "dir": held["dir"], "ret": ret, "pnl": pnl, "why": why,
-                         "entry": held["entry"], "exit": px, "opened": held.get("opened"),
-                         "in": abs(held["units"]) * held["entry"], "out": abs(held["units"]) * px,
-                         "ts": datetime.datetime.utcnow().isoformat()})
+    st["closed"].append({"sym": coin, "dir": held["dir"], "ret": ret, "pnl": pnl, "why": why})
     _logev(st, ev="close", sym=coin, dir=held["dir"], px=px, pnl=round(pnl, 2),
            ret=round(ret, 4), why=why)
     fills.append(f"{TAG}🔵 平空 *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` "
                  f"({ret*100:+.1f}%) [{why}]")
 
 
-def _dw(s):
-    return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in str(s))
-
-
-def _pad(s, n):
-    return str(s) + " " * max(0, n - _dw(s))
-
-
-def _table(headers, rows):
-    wds = [max(_dw(c) for c in col) for col in zip(*([headers] + rows))]
-    return "\n".join("  ".join(_pad(v, wds[i]) for i, v in enumerate(r)) for r in [headers] + rows)
-
-
-def _dur(opened, closed_ts=None):
-    if not opened:
-        return "—"
+def market_bear(ktype=KTYPE):
+    """opt#1: True when the market proxy (BTC) is in a confirmed 4h downtrend
+    (close < EMA100 and 20-bar momentum < 0). Fails CLOSED (returns False) on any
+    data error so we do NOT open new meme shorts when the regime is unknown."""
     try:
-        t0 = datetime.datetime.fromisoformat(opened)
-        t1 = datetime.datetime.fromisoformat(closed_ts) if closed_ts else datetime.datetime.utcnow()
-        hh = (t1 - t0).total_seconds() / 3600.0
-        return f"{hh/24:.1f}d" if hh >= 48 else f"{hh:.1f}h"
-    except Exception:
-        return "—"
+        df = fetch_klines(REGIME_SYMBOL, ktype=ktype, size=300)
+        if len(df) < 120:
+            return False
+        c = df["close"]
+        return bool(c.iloc[-1] < ema(c, 100).iloc[-1] and c.pct_change(20).iloc[-1] < 0)
+    except Exception as e:
+        print(f"[warn] regime check: {e}")
+        return False
 
 
-def _g(x):
+def micro_rsi_ok(coin):
+    """opt#3: 15m RSI(14) >= RSI15_MIN required to OPEN a new short. Fails OPEN
+    (returns True) on any 15m data error — the 4h signal + regime gate still apply."""
     try:
-        return f"{x:.6g}"
-    except Exception:
-        return str(x)
+        d15 = fetch_klines(coin, ktype=RSI15_KTYPE, size=120)
+        if len(d15) < 20:
+            return True
+        return float(rsi(d15["close"], 14).iloc[-1]) >= RSI15_MIN
+    except Exception as e:
+        print(f"[warn] 15m rsi {coin}: {e}")
+        return True
+
+
+def _roll_pf(rets):
+    """PF of a list of trade returns; 9.0 if no losers (winners exist), 1.0 if empty/all-flat.
+    Mirrors backtest_short._roll_pf exactly."""
+    wins = sum(r for r in rets if r > 0)
+    losses = sum(r for r in rets if r <= 0)
+    return (wins / abs(losses)) if losses != 0 else (9.0 if wins > 0 else 1.0)
+
+
+def pf_size_mult(state):
+    """opt#4: size the NEXT meme(S1) short by the rolling PF of the last PF_N meme
+    closes. Cold book -> down to PF_MULT_LO, hot -> full 1.0, linear between.
+    Returns (mult, pf_or_None). Full size (1.0, None) until PF_WARM meme closes
+    exist, or when PF_SIZING is off. Same linear map as backtest_short.size_scale."""
+    if not PF_SIZING:
+        return 1.0, None
+    rets = [c["ret"] for c in state.get("closed", []) if c.get("why") == "s1"][-PF_N:]
+    if len(rets) < PF_WARM:
+        return 1.0, None
+    pf = _roll_pf(rets)
+    mult = PF_MULT_LO + (pf - PF_LO) / (PF_HI - PF_LO) * (1.0 - PF_MULT_LO)
+    return min(1.0, max(PF_MULT_LO, mult)), pf
 
 
 def run(dry_run=False):
@@ -281,6 +321,7 @@ def run(dry_run=False):
         universe += [("trend", c) for c in TREND_COINS]
 
     fused = st.get("fuse_until", "") and now.isoformat() < st["fuse_until"]
+    bear = market_bear() if REGIME_GATE else True   # opt#1: computed once per cycle
     fills = []
     for kind, coin in universe:
         try:
@@ -299,23 +340,37 @@ def run(dry_run=False):
                 if held_dir != 0:
                     close_pos(st, coin, px, "fuse" if fused else ev["why"], fills)
                 if desired != 0:
-                    eq = equity_of(st)
-                    gross = sum(abs(p["units"]) * p["last_px"] for p in st["positions"].values())
-                    notional = min(eq * weight(kind, ev["atr_pct"]), max(eq - gross, 0))
-                    if notional >= MIN_TICKET:
-                        units = desired * notional / px
-                        st["cash"] -= units * px + abs(units) * px * (FEE + SLIP)
-                        st["positions"][coin] = {"dir": desired, "units": units, "entry": px,
-                                                 "stop": ev["stop"], "tp": ev.get("tp"),
-                                                 "why": ev["why"], "last_px": px,
-                                                 "opened": datetime.datetime.utcnow().isoformat()}
-                        _logev(st, ev="open", sym=coin, dir=desired, px=px,
-                               notional=round(notional, 2), why=ev["why"])
-                        fills.append(f"{TAG}🔴 开空 *{coin.upper()}* @ `{px:.6g}`  "
-                                     f"仓位 `${notional:.0f}` ({notional/eq*100:.0f}%)  "
-                                     f"止损 `{ev['stop']:.6g}`"
-                                     + (f"  止盈 `{ev['tp']:.6g}`" if ev.get("tp") else "")
-                                     + f" [{ev['why']}]")
+                    # ---- entry gates: opt#1 regime (meme only) + opt#3 15m RSI ----
+                    reason = None
+                    if kind == "meme" and REGIME_GATE and not bear:
+                        reason = "regime"          # BTC not in confirmed downtrend
+                    elif RSI15_GATE and not micro_rsi_ok(coin):
+                        reason = "rsi15"           # 15m RSI < 35, oversold -> skip
+                    if reason:
+                        _logev(st, ev="skip", sym=coin, dir=desired, why=reason)
+                    else:
+                        eq = equity_of(st)
+                        gross = sum(abs(p["units"]) * p["last_px"] for p in st["positions"].values())
+                        # opt#4: rolling-PF size multiplier (meme S1 only; trend at full)
+                        smult, spf = pf_size_mult(st) if kind == "meme" else (1.0, None)
+                        notional = min(eq * weight(kind, ev["atr_pct"]) * smult, max(eq - gross, 0))
+                        if notional >= MIN_TICKET:
+                            units = desired * notional / px
+                            st["cash"] -= units * px + abs(units) * px * (FEE + SLIP)
+                            st["positions"][coin] = {"dir": desired, "units": units, "entry": px,
+                                                     "stop": ev["stop"], "tp": ev.get("tp"),
+                                                     "why": ev["why"], "last_px": px}
+                            _logev(st, ev="open", sym=coin, dir=desired, px=px,
+                                   notional=round(notional, 2), why=ev["why"],
+                                   smult=round(smult, 2),
+                                   spf=(round(spf, 2) if spf is not None else None))
+                            size_note = (f"  ⚖️{smult:.2f}×(PF{spf:.2f})"
+                                         if kind == "meme" and smult < 0.999 else "")
+                            fills.append(f"{TAG}🔴 开空 *{coin.upper()}* @ `{px:.6g}`  "
+                                         f"仓位 `${notional:.0f}` ({notional/eq*100:.0f}%)"
+                                         + size_note + f"  止损 `{ev['stop']:.6g}`"
+                                         + (f"  止盈 `{ev['tp']:.6g}`" if ev.get("tp") else "")
+                                         + f" [{ev['why']}]")
             elif held:
                 held["stop"] = ev["stop"] if ev["stop"] else held["stop"]
             time.sleep(0.2)
@@ -346,33 +401,14 @@ def run(dry_run=False):
         wins = [r for r in rets if r > 0]; losses = [r for r in rets if r <= 0]
         win = 100 * len(wins) / len(rets) if rets else float("nan")
         pf = (sum(wins) / abs(sum(losses))) if losses and sum(losses) != 0 else (99 if wins else float("nan"))
-        rep = [f"{TAG}📄 *做空模拟盘日报*",
-               f"  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)  ·  持仓 {len(st['positions'])} 个  ·  累计已实现 `${st['realized']:+.2f}`",
-               f"  已平仓 {len(rets)} 笔" + (f"  ·  胜率 {win:.0f}%  ·  盈亏比 {pf:.2f}" if rets else "")]
-        day_closes = [c for c in st["closed"] if str(c.get("ts", ""))[:10] == today]
-        if day_closes:
-            tot = sum(c["pnl"] for c in day_closes)
-            rows = [[f"平空 {c['sym'].upper()}",
-                     f"{_g(c.get('entry'))}→{_g(c.get('exit'))}",
-                     f"${c.get('in', 0):.0f}→${c.get('out', 0):.0f}",
-                     _dur(c.get('opened'), c.get('ts')),
-                     f"{c['pnl']:+.2f} ({c['ret']*100:+.1f}%)"] for c in day_closes]
-            rep.append(f"今日平空 {len(day_closes)} 笔  ·  合计 `{tot:+.2f}`")
-            rep.append("```\n" + _table(["币种", "价(入→出)", "额(入→出)", "时长", "盈亏"], rows) + "\n```")
-        if st["positions"]:
-            upnl = 0.0; rows = []
-            for sym, p in st["positions"].items():
-                u = p["units"] * (p["last_px"] - p["entry"]); upnl += u
-                innot = abs(p["units"]) * p["entry"]; curval = abs(p["units"]) * p["last_px"]
-                r = (p["last_px"] / p["entry"] - 1) * p["dir"]
-                rows.append([f"空 {sym.upper()}",
-                             f"{_g(p['entry'])}→{_g(p['last_px'])}",
-                             f"${innot:.0f}→${curval:.0f}",
-                             _dur(p.get('opened')),
-                             f"{u:+.2f} ({r*100:+.1f}%)"])
-            rep.append(f"当前持仓 {len(st['positions'])} 个  ·  浮盈亏合计 `{upnl:+.2f}`")
-            rep.append("```\n" + _table(["币种", "价(入→现)", "额(入→现)", "时长", "浮盈亏"], rows) + "\n```")
-        msgs.append("\n".join(rep))
+        smult_now, spf_now = pf_size_mult(st)
+        size_line = ("\n  仓位缩放 满仓(未启用/热身中)" if spf_now is None
+                     else f"\n  仓位缩放 `{smult_now:.2f}×`（滚动PF {spf_now:.2f}，窗口{PF_N}）")
+        msgs.append(f"{TAG}📄 *做空模拟盘日报*\n  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)"
+                    f"  ·  持仓 {len(st['positions'])} 个\n  累计已实现 `${st['realized']:+.2f}`"
+                    f"  ·  已平仓 {len(rets)} 笔"
+                    + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else "")
+                    + (size_line if PF_SIZING else ""))
         st["last_report"] = today
 
     save_state(st)                      # state FIRST, messages second
