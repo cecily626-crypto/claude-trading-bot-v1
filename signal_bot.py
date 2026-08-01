@@ -57,6 +57,20 @@ BARS_PER_YEAR = {"hour4": 365 * 6, "hour8": 365 * 3, "hour1": 365 * 24, "day1": 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "bot_state.json")
 FEE_NOTE = "LBank maker 0.04% / taker 0.02%"
 
+# 2026-08-01: strategy1 paused (paper_bot.py stopped opening new positions,
+# see docs/PAUSE_AND_SHADOW_MODE.md), but this bot keeps computing and pushing
+# raw signals as before (signal quality here still feeds the resume decision).
+# Only the message text changes -- annotate so it's not mistaken for "we're
+# about to open this for real" while paused.
+CONTROL_FILE = os.path.join(os.path.dirname(__file__), "trading_control.json")
+
+
+def trading_enabled(key):
+    try:
+        return bool(json.load(open(CONTROL_FILE)).get(key, True))
+    except Exception:
+        return True
+
 DIR_NAME = {1: "LONG", -1: "SHORT", 0: "FLAT"}
 
 
@@ -226,7 +240,8 @@ def run(dry_run=False):
         header = "*交易信号*（LBank · 4h · 多空）"
         body = "\n\n".join(alerts)
         footer = f"_{FEE_NOTE} · 非投资建议，回测优势≠未来收益_"
-        text = f"*《做多1.0策略》*\n\n{header}\n\n{body}\n\n{footer}"
+        prefix = "【已暂停·仅供参考】" if not trading_enabled("strategy1_trading_enabled") else ""
+        text = f"*{prefix}《做多1.0策略》*\n\n{header}\n\n{body}\n\n{footer}"
         if dry_run:
             print(text)
         else:
