@@ -13,12 +13,24 @@ stop is now enforced on every run, and any position whose unrealized loss exceed
 MAX_POS_LOSS of its entry notional is force-closed. Before this, stops were only
 implied by the 4h state machine and a UDOGE short ran to -116% unchecked.
 
+2026-08-01 (pause + shadow mode): after a regime-filter backtest found no
+out-of-sample edge (see docs/PAUSE_AND_SHADOW_MODE.md), this strategy was paused
+via trading_control.json (strategy1_trading_enabled). The pause gate below
+touches ONLY the "open a new position" branch -- existing positions still exit
+by their normal stop/flip rules, untouched. A parallel, always-on shadow ledger
+(shadow_account.json / shadow_trades.csv) keeps simulating full entries+exits
+regardless of the pause, so we have a continuous read on whether the strategy
+would be working if it were live -- see resume_watch.py for the resume-alert
+logic built on top of that ledger. Strategy logic itself (evaluate(), sizing,
+stops) is unchanged.
+
 ENV: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, optional PAPER_START (default 2000).
 Run: python paper_bot.py --dry-run   (prints, sends nothing)
      python paper_bot.py
 """
 import os
 import sys
+import csv
 import json
 import time
 import datetime
@@ -43,6 +55,116 @@ MAX_FRAC = {"trend": 0.40, "breakout": 0.12}     # cap per position (% of equity
 MIN_TICKET = 20.0                                # don't bother below $20
 MAX_POS_LOSS = 0.15                              # circuit breaker: force-close at -15% of entry notional
 DIRTXT = {1: "多", -1: "空"}
+
+# ---- total on/off switch (2026-08-01) --------------------------------------
+CONTROL_FILE = os.path.join(os.path.dirname(__file__), "trading_control.json")
+
+
+def trading_enabled(key):
+    """Fail-open (True) if the control file is missing or unreadable -- a
+    missing/corrupt switch file must never silently stop trading. Only an
+    explicit `false` in the file blocks new entries."""
+    try:
+        return bool(json.load(open(CONTROL_FILE)).get(key, True))
+    except Exception:
+        return True
+
+
+# ---- shadow ledger (2026-08-01): always-on parallel simulation, completely
+# independent of the switch above. Same entry/exit/sizing rules as the real
+# account, just against its own state file and never touching real capital. --
+SHADOW_STATE_FILE = os.path.join(os.path.dirname(__file__), "shadow_account.json")
+SHADOW_CSV = os.path.join(os.path.dirname(__file__), "shadow_trades.csv")
+SHADOW_CSV_COLS = ["ts_utc", "strategy", "event", "symbol", "dir", "price",
+                    "notional", "pnl_usd", "pnl_pct", "why", "opened_ts"]
+SHADOW_TAG = "S1_trend_breakout"
+
+
+def load_shadow_state():
+    if os.path.exists(SHADOW_STATE_FILE):
+        return json.load(open(SHADOW_STATE_FILE))
+    return {"cash": START, "start": START, "positions": {}, "realized": 0.0}
+
+
+def save_shadow_state(s):
+    json.dump(s, open(SHADOW_STATE_FILE, "w"), indent=2)
+
+
+def log_shadow_trade(event, symbol, dir_, price, notional=None, pnl_usd=None,
+                     pnl_pct=None, why="", opened_ts=""):
+    new_file = not os.path.exists(SHADOW_CSV)
+    with open(SHADOW_CSV, "a", newline="") as f:
+        w = csv.writer(f)
+        if new_file:
+            w.writerow(SHADOW_CSV_COLS)
+        w.writerow([datetime.datetime.utcnow().isoformat(), SHADOW_TAG, event, symbol, dir_,
+                   f"{price:.10g}",
+                   f"{notional:.2f}" if notional is not None else "",
+                   f"{pnl_usd:.4f}" if pnl_usd is not None else "",
+                   f"{pnl_pct:.6f}" if pnl_pct is not None else "",
+                   why, opened_ts])
+
+
+def shadow_reconcile(sst, kind, coin, ev):
+    """Mirrors the real account's per-symbol logic below (hard stop/circuit
+    breaker, close-then-open, trailing stop) but ALWAYS allows a fresh entry --
+    this is "what would happen if we hadn't paused"."""
+    px = ev["price"]
+    held = sst["positions"].get(coin)
+    held_dir = held["dir"] if held else 0
+    desired = ev["dir"]
+    if held:
+        held["last_px"] = px
+
+    if held:
+        unreal = held["units"] * (px - held["entry"])
+        entry_notional = abs(held["units"]) * held["entry"]
+        stop_hit = (held_dir > 0 and px <= held["stop"]) or (held_dir < 0 and px >= held["stop"])
+        fuse_hit = unreal <= -MAX_POS_LOSS * entry_notional
+        if stop_hit or fuse_hit:
+            pnl = unreal
+            sst["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
+            ret = (px / held["entry"] - 1) * held_dir
+            sst["realized"] += pnl
+            why = "硬止损" if stop_hit else f"熔断{MAX_POS_LOSS*100:.0f}%"
+            log_shadow_trade("close", coin, held_dir, px, pnl_usd=pnl, pnl_pct=ret, why=why,
+                             opened_ts=held.get("opened", ""))
+            sst["positions"].pop(coin, None)
+            return
+
+    eq = equity_of(sst)
+    if desired != held_dir:
+        if held_dir != 0:
+            pnl = held["units"] * (px - held["entry"])
+            sst["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
+            ret = (px / held["entry"] - 1) * held_dir
+            sst["realized"] += pnl
+            log_shadow_trade("close", coin, held_dir, px, pnl_usd=pnl, pnl_pct=ret, why="离场",
+                             opened_ts=held.get("opened", ""))
+            sst["positions"].pop(coin, None)
+        if desired != 0:
+            entry_px = px
+            if kind == "trend":
+                try:
+                    d1 = fetch_klines(coin, ktype="hour1", size=300)
+                    ok, px1 = pullback_entry_1h(d1, desired)
+                except Exception:
+                    ok = False
+                if not ok:
+                    return
+                entry_px = px1
+            gross = sum(abs(p["units"]) * p["last_px"] for p in sst["positions"].values())
+            notional = min(eq * weight(kind, ev["atr"] / entry_px), max(eq - gross, 0))
+            if notional >= MIN_TICKET:
+                units = desired * notional / entry_px
+                sst["cash"] -= units * entry_px + abs(units) * entry_px * (FEE + SLIP)
+                opened_ts = datetime.datetime.utcnow().isoformat()
+                sst["positions"][coin] = {"dir": desired, "units": units, "entry": entry_px,
+                                          "stop": ev["stop"], "last_px": entry_px, "opened": opened_ts}
+                log_shadow_trade("open", coin, desired, entry_px, notional=notional, why="",
+                                 opened_ts=opened_ts)
+    elif held:
+        held["stop"] = ev["stop"]
 
 
 def load_state():
@@ -108,6 +230,7 @@ def _g(x):
 
 def run(dry_run=False):
     st = load_state()
+    sst = load_shadow_state()
     universe = [("trend", c) for c in TREND_COINS] + [("breakout", c) for c in MEMECOINS]
     fills = []
     # 1) refresh marks + reconcile each symbol against the strategy's current view
@@ -117,6 +240,13 @@ def run(dry_run=False):
             if len(df) < 120:
                 continue
             ev = evaluate(df, kind)
+
+            # shadow ledger: always runs, independent of the real account below
+            try:
+                shadow_reconcile(sst, kind, coin, ev)
+            except Exception as e:
+                print(f"[warn] shadow {coin}: {e}")
+
             px = ev["price"]
             held = st["positions"].get(coin)
             held_dir = held["dir"] if held else 0
@@ -170,8 +300,9 @@ def run(dry_run=False):
                     _logev(st, ev="close", sym=coin, dir=held_dir, px=px, pnl=round(pnl, 2), ret=round(ret, 4))
                     fills.append(f"🔵 平{DIRTXT[held_dir]} *{coin.upper()}* @ `{px:.6g}`  盈亏 `{pnl:+.2f}` ({ret*100:+.1f}%)")
                     st["positions"].pop(coin, None)
-                # open new
-                if desired != 0:
+                # open new (2026-08-01: gated by the total switch -- pause blocks
+                # ONLY this branch, close-outs above are always unconditional)
+                if desired != 0 and trading_enabled("strategy1_trading_enabled"):
                     if kind == "trend":                      # BTC/ETH: 4h定方向, 用1h回调择时进场
                         d1 = fetch_klines(coin, ktype="hour1", size=300)
                         ok, px1 = pullback_entry_1h(d1, desired)
@@ -214,6 +345,8 @@ def run(dry_run=False):
         rep = [f"📄 *模拟盘日报*",
                f"  净值 `${eq:.2f}` ({pnl_pct*100:+.1f}%)  ·  持仓 {len(st['positions'])} 个  ·  累计已实现 `${st['realized']:+.2f}`",
                f"  已平仓 {len(rets)} 笔" + (f"  ·  胜率 {win:.0f}%  ·  盈亏比 {pf:.2f}" if rets else "")]
+        if not trading_enabled("strategy1_trading_enabled"):
+            rep.append("  ⏸️ 策略已暂停：不开新仓，已有持仓按原规则自然离场（影子模拟仍在后台继续演算）")
         day_closes = [c for c in st["closed"] if str(c.get("ts", ""))[:10] == today]
         if day_closes:
             tot = sum(c["pnl"] for c in day_closes)
@@ -241,6 +374,7 @@ def run(dry_run=False):
         st["last_report"] = today
 
     save_state(st)                       # 先落盘: 消息发送失败绝不能导致交易状态丢失/重放
+    save_shadow_state(sst)
     if msgs:
         text = "*《做多1.0策略》*\n\n" + "\n\n".join(msgs) + "\n\n_虚拟账户·非投资建议_"
         if dry_run:

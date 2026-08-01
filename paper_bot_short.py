@@ -16,12 +16,23 @@ to a pending queue and are re-sent next cycle with a (补发) prefix.
 Risk: per-position cap 12% of equity (meme) / 40% (btc-eth), account fuse -3%
 in a UTC day -> close all + pause 24h, daily snapshot report.
 
+2026-08-01 (pause + shadow mode): paused via trading_control.json
+(strategy2_trading_enabled) after a regime-filter backtest found no
+out-of-sample edge (see docs/PAUSE_AND_SHADOW_MODE.md). The pause is wired into
+the existing entry-gate chain (alongside REGIME_GATE/RSI15_GATE) so it only
+ever blocks a fresh open -- existing positions still exit by stop/fuse/flip as
+before. A parallel always-on shadow ledger (shadow_account_short.json /
+shadow_trades.csv, shared file with paper_bot.py using a "strategy" column)
+keeps simulating full entries+exits regardless of the pause. See
+resume_watch.py for the resume-alert logic built on that ledger.
+
 ENV: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, optional PAPER_START_SHORT,
      SHORT_MODE, SIGNAL_KTYPE.
 Run: python paper_bot_short.py [--dry-run]
 """
 import os
 import sys
+import csv
 import json
 import time
 import datetime
@@ -49,7 +60,17 @@ TAG = "《做空2.0》"
 
 # Backtest winner (2026-07-07, LBank 4h, 34 meme + btc/eth):
 #   S1b+仅止损出场: n=400 win=43.8% PF=1.87 avg=+2.41%  (H1 2.78 / H2 0.88)
-S1_KW = {"breakout": 55, "confirm": False}   # 回测2026-07-15: opt#2回踩确认劣化PF(1.88->0.95), 回滚现行
+S1_KW = {"breakout": 55}                 # regime=100, gap=0.03, stop_mult=2.5 defaults
+# 2026-08-01 bugfix: this key was `{"breakout": 55, "confirm": False}` from
+# 2026-07-16 (commit ffe3c48) onward. breakdown_short() in strategy_short.py
+# has NEVER accepted a `confirm` kwarg (single-commit history, dee4e70) --
+# every call to eval_s1() for every meme coin has been raising TypeError and
+# getting silently swallowed by run()'s per-symbol try/except ever since,
+# which also skipped stop-checking/mark-to-market for held meme positions for
+# ~16 days (confirmed neither open position -- memecoin, troll -- had
+# actually breached its stored stop in that window before this fix landed).
+# The commit message ("opt#2回踩确认劣化PF...回滚现行") says the INTENT was to
+# roll back to the plain default config -- this restores exactly that.
 S1_STOP_EXIT_ONLY = True                 # only the ATR trailing stop closes a position
 S2_KW = {}                               # S2 blowoff fade: rejected (PF 0.85), not used
 
@@ -78,6 +99,16 @@ PF_LO, PF_HI = 0.9, 1.4       # PF 下限/上限阈值
 PF_MULT_LO = 0.25             # 最小仓位系数 (最冷时)
 PF_WARM = 8                   # 已平仓不足此数 -> 满仓, 不缩放
 
+# ---- total on/off switch (2026-08-01) --------------------------------------
+CONTROL_FILE = os.path.join(os.path.dirname(__file__), "trading_control.json")
+
+
+def trading_enabled(key):
+    try:
+        return bool(json.load(open(CONTROL_FILE)).get(key, True))
+    except Exception:
+        return True
+
 
 # ------------------------------- state --------------------------------------
 def load_state():
@@ -96,6 +127,102 @@ def _logev(state, **kw):
     kw["ts"] = datetime.datetime.utcnow().isoformat()
     state.setdefault("log", []).append(kw)
     state["log"] = state["log"][-800:]
+
+
+# ---- shadow ledger (2026-08-01), same design as paper_bot.py --------------
+SHADOW_STATE_FILE = os.path.join(os.path.dirname(__file__), "shadow_account_short.json")
+SHADOW_CSV = os.path.join(os.path.dirname(__file__), "shadow_trades.csv")   # shared file w/ paper_bot.py
+SHADOW_CSV_COLS = ["ts_utc", "strategy", "event", "symbol", "dir", "price",
+                    "notional", "pnl_usd", "pnl_pct", "why", "opened_ts"]
+SHADOW_TAG = "S2_short"
+
+
+def load_shadow_state():
+    if os.path.exists(SHADOW_STATE_FILE):
+        return json.load(open(SHADOW_STATE_FILE))
+    return {"cash": START, "start": START, "positions": {}, "realized": 0.0,
+            "closed": [], "log": [], "day_anchor": {}, "fuse_until": ""}
+
+
+def save_shadow_state(s):
+    json.dump(s, open(SHADOW_STATE_FILE, "w"), indent=2)
+
+
+def log_shadow_trade(event, symbol, dir_, price, notional=None, pnl_usd=None,
+                     pnl_pct=None, why="", opened_ts=""):
+    new_file = not os.path.exists(SHADOW_CSV)
+    with open(SHADOW_CSV, "a", newline="") as f:
+        w = csv.writer(f)
+        if new_file:
+            w.writerow(SHADOW_CSV_COLS)
+        w.writerow([datetime.datetime.utcnow().isoformat(), SHADOW_TAG, event, symbol, dir_,
+                   f"{price:.10g}",
+                   f"{notional:.2f}" if notional is not None else "",
+                   f"{pnl_usd:.4f}" if pnl_usd is not None else "",
+                   f"{pnl_pct:.6f}" if pnl_pct is not None else "",
+                   why, opened_ts])
+
+
+def shadow_close(sst, coin, px, why):
+    held = sst["positions"].pop(coin)
+    pnl = held["units"] * (px - held["entry"])
+    sst["cash"] += held["units"] * px - abs(held["units"]) * px * (FEE + SLIP)
+    ret = (px / held["entry"] - 1) * held["dir"]
+    sst["realized"] += pnl
+    log_shadow_trade("close", coin, held["dir"], px, pnl_usd=pnl, pnl_pct=ret, why=why,
+                     opened_ts=held.get("opened", ""))
+
+
+def shadow_reconcile(sst, kind, coin, ev, now, bear):
+    """Always-on parallel simulation of what strategy2 would do if it were not
+    paused: same regime/RSI15 gates (both off by default, unaffected by the
+    total switch), same PF-based sizing, own independent -3% daily fuse."""
+    px = ev["price"]
+    held = sst["positions"].get(coin)
+    if held:
+        held["last_px"] = px
+    held_dir = held["dir"] if held else 0
+
+    sfused = sst.get("fuse_until", "") and now.isoformat() < sst["fuse_until"]
+    desired = 0 if sfused else ev["dir"]
+
+    if desired != held_dir:
+        if held_dir != 0:
+            shadow_close(sst, coin, px, "fuse" if sfused else ev["why"])
+        if desired != 0:
+            reason = None
+            if kind == "meme" and REGIME_GATE and not bear:
+                reason = "regime"
+            elif RSI15_GATE and not micro_rsi_ok(coin):
+                reason = "rsi15"
+            if not reason:
+                eq = equity_of(sst)
+                gross = sum(abs(p["units"]) * p["last_px"] for p in sst["positions"].values())
+                smult, _spf = pf_size_mult(sst) if kind == "meme" else (1.0, None)
+                notional = min(eq * weight(kind, ev["atr_pct"]) * smult, max(eq - gross, 0))
+                if notional >= MIN_TICKET:
+                    units = desired * notional / px
+                    sst["cash"] -= units * px + abs(units) * px * (FEE + SLIP)
+                    opened_ts = datetime.datetime.utcnow().isoformat()
+                    sst["positions"][coin] = {"dir": desired, "units": units, "entry": px,
+                                              "stop": ev["stop"], "tp": ev.get("tp"),
+                                              "why": ev["why"], "last_px": px, "opened": opened_ts}
+                    log_shadow_trade("open", coin, desired, px, notional=notional, why=ev["why"],
+                                     opened_ts=opened_ts)
+    elif held:
+        held["stop"] = ev["stop"] if ev["stop"] else held["stop"]
+
+
+def shadow_fuse_check(sst, now, today):
+    seq = equity_of(sst)
+    anchor = sst.setdefault("day_anchor", {})
+    if anchor.get("date") != today:
+        anchor.update({"date": today, "eq": seq})
+    sfused = sst.get("fuse_until", "") and now.isoformat() < sst["fuse_until"]
+    if not sfused and anchor["eq"] > 0 and seq / anchor["eq"] - 1 <= -FUSE_DD:
+        for coin in list(sst["positions"]):
+            shadow_close(sst, coin, sst["positions"][coin]["last_px"], "fuse")
+        sst["fuse_until"] = (now + datetime.timedelta(hours=24)).isoformat()
 
 
 # ------------------------------ telegram ------------------------------------
@@ -305,6 +432,7 @@ def pf_size_mult(state):
 
 def run(dry_run=False):
     st = load_state()
+    sst = load_shadow_state()
     now = datetime.datetime.utcnow()
     today = now.date().isoformat()
 
@@ -329,6 +457,13 @@ def run(dry_run=False):
             if len(df) < 220:
                 continue
             ev = evaluate_short(df, kind)
+
+            # shadow ledger: always runs, independent of the real account below
+            try:
+                shadow_reconcile(sst, kind, coin, ev, now, bear)
+            except Exception as e:
+                print(f"[warn] shadow {coin}: {e}")
+
             px = ev["price"]
             held = st["positions"].get(coin)
             if held:
@@ -340,9 +475,11 @@ def run(dry_run=False):
                 if held_dir != 0:
                     close_pos(st, coin, px, "fuse" if fused else ev["why"], fills)
                 if desired != 0:
-                    # ---- entry gates: opt#1 regime (meme only) + opt#3 15m RSI ----
+                    # ---- entry gates: total switch + opt#1 regime (meme only) + opt#3 15m RSI ----
                     reason = None
-                    if kind == "meme" and REGIME_GATE and not bear:
+                    if not trading_enabled("strategy2_trading_enabled"):
+                        reason = "paused"
+                    elif kind == "meme" and REGIME_GATE and not bear:
                         reason = "regime"          # BTC not in confirmed downtrend
                     elif RSI15_GATE and not micro_rsi_ok(coin):
                         reason = "rsi15"           # 15m RSI < 35, oversold -> skip
@@ -377,6 +514,12 @@ def run(dry_run=False):
         except Exception as e:
             print(f"[warn] {coin}: {e}")
 
+    # ---- shadow account fuse (independent of the real account's fuse) -------
+    try:
+        shadow_fuse_check(sst, now, today)
+    except Exception as e:
+        print(f"[warn] shadow fuse check: {e}")
+
     # ---- account fuse: -3% within the UTC day -> flat all + pause 24h ------
     eq = equity_of(st)
     anchor = st.setdefault("day_anchor", {})
@@ -404,14 +547,18 @@ def run(dry_run=False):
         smult_now, spf_now = pf_size_mult(st)
         size_line = ("\n  仓位缩放 满仓(未启用/热身中)" if spf_now is None
                      else f"\n  仓位缩放 `{smult_now:.2f}×`（滚动PF {spf_now:.2f}，窗口{PF_N}）")
+        pause_line = ("\n  ⏸️ 策略已暂停：不开新仓，已有持仓按原规则自然离场（影子模拟仍在后台继续演算）"
+                      if not trading_enabled("strategy2_trading_enabled") else "")
         msgs.append(f"{TAG}📄 *做空模拟盘日报*\n  净值 `${eq:.2f}` ({(eq/st['start']-1)*100:+.1f}%)"
                     f"  ·  持仓 {len(st['positions'])} 个\n  累计已实现 `${st['realized']:+.2f}`"
                     f"  ·  已平仓 {len(rets)} 笔"
                     + (f"  ·  胜率 {win:.0f}%  盈亏比 {pf:.2f}" if rets else "")
-                    + (size_line if PF_SIZING else ""))
+                    + (size_line if PF_SIZING else "")
+                    + pause_line)
         st["last_report"] = today
 
     save_state(st)                      # state FIRST, messages second
+    save_shadow_state(sst)
     if msgs:
         send_guaranteed(st, "\n\n".join(msgs) + "\n\n_虚拟账户·非投资建议_", dry=dry_run)
     else:
