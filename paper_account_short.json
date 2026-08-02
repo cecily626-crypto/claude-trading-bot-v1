@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-01T09:25:53.046400"
-    },
-    {
-      "ev": "skip",
-      "sym": "elon",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-01T09:25:59.249511"
-    },
-    {
-      "ev": "skip",
-      "sym": "floki",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-01T09:30:45.602716"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-01T09:30:46.989864"
-    },
-    {
-      "ev": "skip",
       "sym": "elon",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5825,34 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-02T05:40:52.202525"
+    },
+    {
+      "ev": "skip",
+      "sym": "floki",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-02T05:45:47.238369"
+    },
+    {
+      "ev": "skip",
+      "sym": "wif",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-02T05:45:48.074714"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-02T05:45:48.483497"
+    },
+    {
+      "ev": "skip",
+      "sym": "elon",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-02T05:45:53.591510"
     }
   ],
   "pending_msgs": [],
