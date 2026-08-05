@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-03T18:25:52.584614"
-    },
-    {
-      "ev": "skip",
       "sym": "elon",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-05T09:55:49.565327"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-05T10:00:52.572181"
     }
   ],
   "pending_msgs": [],
