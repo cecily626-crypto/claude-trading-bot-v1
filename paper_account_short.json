@@ -256,83 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "spx",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:35:55.096679"
-    },
-    {
-      "ev": "skip",
-      "sym": "wif",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:45.220237"
-    },
-    {
-      "ev": "skip",
-      "sym": "brett",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:46.064558"
-    },
-    {
-      "ev": "skip",
-      "sym": "popcat",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:46.479709"
-    },
-    {
-      "ev": "skip",
-      "sym": "moodeng",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:47.705813"
-    },
-    {
-      "ev": "skip",
-      "sym": "mew",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:48.759554"
-    },
-    {
-      "ev": "skip",
-      "sym": "dogs",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:49.182630"
-    },
-    {
-      "ev": "skip",
-      "sym": "turbo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:49.813813"
-    },
-    {
-      "ev": "skip",
-      "sym": "memecoin",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:50.257405"
-    },
-    {
-      "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:50.658657"
-    },
-    {
-      "ev": "skip",
-      "sym": "bobo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-15T04:40:52.131557"
-    },
-    {
-      "ev": "skip",
       "sym": "snek",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5776,83 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-15T10:20:55.274850"
+    },
+    {
+      "ev": "skip",
+      "sym": "wif",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:44.913485"
+    },
+    {
+      "ev": "skip",
+      "sym": "brett",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:45.786563"
+    },
+    {
+      "ev": "skip",
+      "sym": "moodeng",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:47.655683"
+    },
+    {
+      "ev": "skip",
+      "sym": "mew",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:48.487293"
+    },
+    {
+      "ev": "skip",
+      "sym": "dogs",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:48.893534"
+    },
+    {
+      "ev": "skip",
+      "sym": "turbo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:49.331405"
+    },
+    {
+      "ev": "skip",
+      "sym": "memecoin",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:49.742290"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:50.159629"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:51.450610"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:51.862617"
+    },
+    {
+      "ev": "skip",
+      "sym": "spx",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-15T10:25:53.630847"
     }
   ],
   "pending_msgs": [],
