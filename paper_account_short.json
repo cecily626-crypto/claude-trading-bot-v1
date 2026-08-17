@@ -256,55 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "dogs",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:20:50.633489"
-    },
-    {
-      "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:20:52.113495"
-    },
-    {
-      "ev": "skip",
-      "sym": "bobo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:20:53.845546"
-    },
-    {
-      "ev": "skip",
-      "sym": "snek",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:20:54.277357"
-    },
-    {
-      "ev": "skip",
-      "sym": "pengu",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:20:59.614314"
-    },
-    {
-      "ev": "skip",
-      "sym": "pepe",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:25:44.100368"
-    },
-    {
-      "ev": "skip",
-      "sym": "floki",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-17T10:25:44.522255"
-    },
-    {
-      "ev": "skip",
       "sym": "wif",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5804,55 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-17T19:00:57.474649"
+    },
+    {
+      "ev": "skip",
+      "sym": "pepe",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:43.855719"
+    },
+    {
+      "ev": "skip",
+      "sym": "floki",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:44.268286"
+    },
+    {
+      "ev": "skip",
+      "sym": "dogs",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:49.783592"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:51.026794"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:52.348183"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:52.759910"
+    },
+    {
+      "ev": "skip",
+      "sym": "pengu",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-17T19:05:57.694394"
     }
   ],
   "pending_msgs": [],
