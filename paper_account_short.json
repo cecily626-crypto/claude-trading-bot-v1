@@ -256,27 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "snek",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T03:00:54.023024"
-    },
-    {
-      "ev": "skip",
-      "sym": "pengu",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T03:00:58.737620"
-    },
-    {
-      "ev": "skip",
-      "sym": "pepe",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T03:05:42.811972"
-    },
-    {
-      "ev": "skip",
       "sym": "floki",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5832,27 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-18T17:35:51.519442"
+    },
+    {
+      "ev": "skip",
+      "sym": "pepe",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-18T17:40:43.924820"
+    },
+    {
+      "ev": "skip",
+      "sym": "floki",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-18T17:40:44.345691"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-18T17:40:51.715564"
     }
   ],
   "pending_msgs": [],
