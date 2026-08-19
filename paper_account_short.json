@@ -256,27 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "pepe",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T06:40:43.703892"
-    },
-    {
-      "ev": "skip",
-      "sym": "floki",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T06:40:44.156865"
-    },
-    {
-      "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-08-18T06:40:50.000678"
-    },
-    {
-      "ev": "skip",
       "sym": "bobo",
       "dir": -1,
       "why": "paused",
@@ -5853,12 +5832,33 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-08-18T23:55:52.746637"
+    },
+    {
+      "ev": "skip",
+      "sym": "pepe",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-19T00:00:45.720662"
+    },
+    {
+      "ev": "skip",
+      "sym": "floki",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-19T00:00:46.157647"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-08-19T00:00:53.562391"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-08-18",
+  "last_report": "2026-08-19",
   "day_anchor": {
-    "date": "2026-08-18",
+    "date": "2026-08-19",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
