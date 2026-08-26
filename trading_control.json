@@ -10,5 +10,7 @@
     "rationale_for_1.2_not_1.0": "buffer so the alert doesn't flip back and forth around breakeven",
     "rationale_for_not_using_adx_ema": "the same 2026-07-31 backtest found 4h-vs-daily ADX regime-label agreement is only 47-52% (EMA agreement 60-82%, better but still not trustworthy enough on its own) -- these labels are not stable enough to gate a resume decision",
     "action_on_met": "Telegram alert only (see resume_watch.py) -- NEVER auto-flips the *_trading_enabled flags. Resuming requires manually editing this file."
-  }
+  },
+  "signal_bot_push_enabled": false,
+  "signal_bot_push_disabled_note": "2026-08-26: routine 【已暂停·仅供参考】 raw signal pushes turned off at user request (noise from a paused strategy) -- signal_bot.py still computes and persists bot_state.json every cycle exactly as before, only the Telegram send is skipped. Does NOT affect shadow_trades.csv (written independently by paper_bot.py/paper_bot_short.py) or resume_watch.py's alert (deliberately kept on -- see resume_condition above, that alert is the entire point of shadow mode). Flip back to true to resume."
 }
