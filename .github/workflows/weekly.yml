@@ -1,7 +1,10 @@
 name: weekly-review
 on:
-  schedule:
-    - cron: "0 0 * * 1"
+  # 每周《做多1.0策略》+【2.0空】复盘推送已停用 (2026-08-26): 两个策略都在暂停/影子模式中,
+  # 常规复盘推送对已暂停策略没有意义。恢复条件告警(resume_watch.py)不受影响,仍在跑。
+  # 如需恢复, 取消下面 schedule 两行注释即可。
+  # schedule:
+  #   - cron: "0 0 * * 1"
   workflow_dispatch:
 permissions:
   contents: write

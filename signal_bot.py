@@ -244,6 +244,13 @@ def run(dry_run=False):
         text = f"*{prefix}《做多1.0策略》*\n\n{header}\n\n{body}\n\n{footer}"
         if dry_run:
             print(text)
+        elif not trading_enabled("signal_bot_push_enabled"):
+            # 2026-08-26: routine push turned off (see trading_control.json
+            # signal_bot_push_disabled_note) -- state above is already saved
+            # regardless, this only skips the Telegram send. Still printed so
+            # cron logs keep showing what would have gone out.
+            print("[signal push disabled by trading_control.json] would have sent:")
+            print(text)
         else:
             flush_pending()
             print("sent:", send_reliable(text).get("ok"), f"({len(alerts)} alerts)")
