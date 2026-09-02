@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "memecoin",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-01T00:25:47.671540"
-    },
-    {
-      "ev": "skip",
-      "sym": "wojak",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-01T00:25:48.929881"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-01T00:30:43.976637"
-    },
-    {
-      "ev": "skip",
-      "sym": "memecoin",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-01T00:30:48.195675"
-    },
-    {
-      "ev": "skip",
       "sym": "wojak",
       "dir": -1,
       "why": "paused",
@@ -5853,12 +5825,40 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-01T23:55:50.386686"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-02T00:00:45.496382"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-02T00:00:50.055785"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-02T00:00:50.877732"
+    },
+    {
+      "ev": "skip",
+      "sym": "gork",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-02T00:00:52.585617"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-09-01",
+  "last_report": "2026-09-02",
   "day_anchor": {
-    "date": "2026-09-01",
+    "date": "2026-09-02",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
