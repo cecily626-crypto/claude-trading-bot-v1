@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T07:50:44.106629"
-    },
-    {
-      "ev": "skip",
-      "sym": "fartcoin",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T07:50:46.629710"
-    },
-    {
-      "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T07:50:48.727805"
-    },
-    {
-      "ev": "skip",
-      "sym": "wojak",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T07:50:49.557732"
-    },
-    {
-      "ev": "skip",
       "sym": "troll",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5825,34 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-03T19:20:51.856385"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-03T19:25:47.865417"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-03T19:25:48.687908"
+    },
+    {
+      "ev": "skip",
+      "sym": "gork",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-03T19:25:50.342743"
+    },
+    {
+      "ev": "skip",
+      "sym": "giga",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-03T19:25:51.576766"
     }
   ],
   "pending_msgs": [],
