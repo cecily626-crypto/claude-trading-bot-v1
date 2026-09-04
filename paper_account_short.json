@@ -256,20 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "giga",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T14:00:54.668767"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-03T14:05:44.042410"
-    },
-    {
-      "ev": "skip",
       "sym": "fartcoin",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5839,20 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-04T12:30:51.931892"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-04T12:35:48.842754"
+    },
+    {
+      "ev": "skip",
+      "sym": "gork",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-04T12:35:51.347626"
     }
   ],
   "pending_msgs": [],
