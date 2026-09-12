@@ -256,20 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "fartcoin",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-11T14:20:48.054745"
-    },
-    {
-      "ev": "skip",
-      "sym": "turbo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-11T14:20:49.321502"
-    },
-    {
-      "ev": "skip",
       "sym": "spx",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5839,20 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-12T17:55:49.549739"
+    },
+    {
+      "ev": "skip",
+      "sym": "popcat",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-12T18:00:45.649563"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-12T18:00:50.284313"
     }
   ],
   "pending_msgs": [],
