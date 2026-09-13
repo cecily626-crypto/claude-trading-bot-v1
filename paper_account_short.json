@@ -256,20 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "pengu",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-11T15:10:55.881675"
-    },
-    {
-      "ev": "skip",
-      "sym": "labubu",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-11T15:10:56.706372"
-    },
-    {
-      "ev": "skip",
       "sym": "pepe",
       "dir": -1,
       "why": "paused",
@@ -5853,12 +5839,26 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-12T23:55:47.933274"
+    },
+    {
+      "ev": "skip",
+      "sym": "popcat",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-13T00:00:47.591600"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-13T00:00:52.216757"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-09-12",
+  "last_report": "2026-09-13",
   "day_anchor": {
-    "date": "2026-09-12",
+    "date": "2026-09-13",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
