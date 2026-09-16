@@ -256,41 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "popcat",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-15T17:20:45.562248"
-    },
-    {
-      "ev": "skip",
-      "sym": "troll",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-15T17:20:51.479734"
-    },
-    {
-      "ev": "skip",
-      "sym": "popcat",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-15T17:25:45.329432"
-    },
-    {
-      "ev": "skip",
-      "sym": "troll",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-15T17:25:51.416733"
-    },
-    {
-      "ev": "skip",
-      "sym": "popcat",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-15T17:30:45.467556"
-    },
-    {
-      "ev": "skip",
       "sym": "troll",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5818,41 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-16T10:35:53.573285"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-16T10:40:41.426244"
+    },
+    {
+      "ev": "skip",
+      "sym": "popcat",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-16T10:40:42.267151"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-16T10:40:47.792336"
+    },
+    {
+      "ev": "skip",
+      "sym": "troll",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-16T10:40:48.204293"
+    },
+    {
+      "ev": "skip",
+      "sym": "chillguy",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-16T10:40:50.740720"
     }
   ],
   "pending_msgs": [],
