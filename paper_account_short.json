@@ -256,20 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "chillguy",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-17T05:50:53.783826"
-    },
-    {
-      "ev": "skip",
-      "sym": "floki",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-17T05:55:45.140884"
-    },
-    {
-      "ev": "skip",
       "sym": "mog",
       "dir": -1,
       "why": "paused",
@@ -5853,12 +5839,26 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-17T23:55:50.420181"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-18T00:00:51.316818"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-18T00:00:52.175390"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-09-17",
+  "last_report": "2026-09-18",
   "day_anchor": {
-    "date": "2026-09-17",
+    "date": "2026-09-18",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
