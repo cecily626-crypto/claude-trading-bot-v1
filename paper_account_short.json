@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "moodeng",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-17T07:40:45.422457"
-    },
-    {
-      "ev": "skip",
       "sym": "wojak",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-18T08:25:55.309913"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-18T08:30:56.495322"
     }
   ],
   "pending_msgs": [],
