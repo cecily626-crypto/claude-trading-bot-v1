@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "ban",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-24T19:45:52.974281"
-    },
-    {
-      "ev": "skip",
       "sym": "spx",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-09-29T06:10:51.184903"
+    },
+    {
+      "ev": "skip",
+      "sym": "troll",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-09-29T06:15:51.123740"
     }
   ],
   "pending_msgs": [],
