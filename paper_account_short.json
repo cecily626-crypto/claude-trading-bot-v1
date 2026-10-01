@@ -259,20 +259,6 @@
       "sym": "troll",
       "dir": -1,
       "why": "paused",
-      "ts": "2026-09-29T11:05:50.776566"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-29T11:05:51.615667"
-    },
-    {
-      "ev": "skip",
-      "sym": "troll",
-      "dir": -1,
-      "why": "paused",
       "ts": "2026-09-29T11:10:51.211841"
     },
     {
@@ -5853,6 +5839,20 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-01T12:20:55.823532"
+    },
+    {
+      "ev": "skip",
+      "sym": "useless",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-01T12:25:51.623279"
+    },
+    {
+      "ev": "skip",
+      "sym": "labubu",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-01T12:25:55.832385"
     }
   ],
   "pending_msgs": [],
