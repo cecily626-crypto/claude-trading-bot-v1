@@ -259,41 +259,6 @@
       "sym": "useless",
       "dir": -1,
       "why": "paused",
-      "ts": "2026-09-30T17:20:51.812860"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-30T17:25:51.427758"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-30T17:30:51.386680"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-30T17:35:54.326839"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-09-30T17:40:51.274768"
-    },
-    {
-      "ev": "skip",
-      "sym": "useless",
-      "dir": -1,
-      "why": "paused",
       "ts": "2026-09-30T17:45:51.656539"
     },
     {
@@ -5853,12 +5818,47 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-02T23:55:49.893583"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-03T00:00:46.157570"
+    },
+    {
+      "ev": "skip",
+      "sym": "memecoin",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-03T00:00:50.307949"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-03T00:00:52.019234"
+    },
+    {
+      "ev": "skip",
+      "sym": "useless",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-03T00:00:53.741704"
+    },
+    {
+      "ev": "skip",
+      "sym": "pengu",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-03T00:00:57.160785"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-10-02",
+  "last_report": "2026-10-03",
   "day_anchor": {
-    "date": "2026-10-02",
+    "date": "2026-10-03",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
