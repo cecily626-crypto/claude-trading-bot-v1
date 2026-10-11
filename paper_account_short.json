@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-10T03:30:44.394772"
-    },
-    {
-      "ev": "skip",
       "sym": "chillguy",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-11T16:35:53.196669"
+    },
+    {
+      "ev": "skip",
+      "sym": "chillguy",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-11T16:40:53.632653"
     }
   ],
   "pending_msgs": [],
