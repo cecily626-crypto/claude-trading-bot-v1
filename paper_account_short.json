@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-09T21:50:56.284768"
-    },
-    {
-      "ev": "skip",
       "sym": "doge",
       "dir": -1,
       "why": "paused",
@@ -5853,12 +5846,19 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-10T23:55:53.148711"
+    },
+    {
+      "ev": "skip",
+      "sym": "chillguy",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-11T00:00:55.799537"
     }
   ],
   "pending_msgs": [],
-  "last_report": "2026-10-10",
+  "last_report": "2026-10-11",
   "day_anchor": {
-    "date": "2026-10-10",
+    "date": "2026-10-11",
     "eq": 1966.7687153601435
   },
   "fuse_until": "2026-07-15T16:00:43.914194",
