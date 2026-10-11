@@ -256,20 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "brett",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-09T23:35:44.119760"
-    },
-    {
-      "ev": "skip",
-      "sym": "chillguy",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-09T23:35:52.841865"
-    },
-    {
-      "ev": "skip",
       "sym": "pengu",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5839,20 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-11T07:55:56.525836"
+    },
+    {
+      "ev": "skip",
+      "sym": "chillguy",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-11T08:00:53.302400"
+    },
+    {
+      "ev": "skip",
+      "sym": "eth",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-11T08:00:56.666848"
     }
   ],
   "pending_msgs": [],
