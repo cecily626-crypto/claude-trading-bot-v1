@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "neiro",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-19T14:05:45.552892"
-    },
-    {
-      "ev": "skip",
-      "sym": "turbo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-19T14:05:48.134443"
-    },
-    {
-      "ev": "skip",
-      "sym": "bonk",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-19T14:10:43.347497"
-    },
-    {
-      "ev": "skip",
-      "sym": "neiro",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-19T14:10:45.495713"
-    },
-    {
-      "ev": "skip",
       "sym": "turbo",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5825,34 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-20T08:10:53.912239"
+    },
+    {
+      "ev": "skip",
+      "sym": "bonk",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-20T08:15:42.947781"
+    },
+    {
+      "ev": "skip",
+      "sym": "neiro",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-20T08:15:45.068583"
+    },
+    {
+      "ev": "skip",
+      "sym": "turbo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-20T08:15:47.577675"
+    },
+    {
+      "ev": "skip",
+      "sym": "apepe",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-20T08:15:53.449623"
     }
   ],
   "pending_msgs": [],
