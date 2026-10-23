@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "neiro",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-20T15:25:45.160821"
-    },
-    {
-      "ev": "skip",
       "sym": "turbo",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-23T16:20:50.174327"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-23T16:25:55.420579"
     }
   ],
   "pending_msgs": [],
