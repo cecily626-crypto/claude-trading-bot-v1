@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "bobo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-25T01:30:51.425305"
-    },
-    {
-      "ev": "skip",
-      "sym": "labubu",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-25T01:30:57.362523"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-25T01:30:58.241788"
-    },
-    {
-      "ev": "skip",
-      "sym": "wif",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-25T01:35:44.012872"
-    },
-    {
-      "ev": "skip",
       "sym": "fartcoin",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5825,34 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-25T17:30:58.387323"
+    },
+    {
+      "ev": "skip",
+      "sym": "wif",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-25T17:35:40.561777"
+    },
+    {
+      "ev": "skip",
+      "sym": "fartcoin",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-25T17:35:43.596380"
+    },
+    {
+      "ev": "skip",
+      "sym": "labubu",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-25T17:35:53.114721"
+    },
+    {
+      "ev": "skip",
+      "sym": "eth",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-25T17:35:53.947134"
     }
   ],
   "pending_msgs": [],
