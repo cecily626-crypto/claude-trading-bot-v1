@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "snek",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-28T06:15:50.646792"
-    },
-    {
-      "ev": "skip",
       "sym": "labubu",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-29T07:45:50.395854"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-29T07:50:50.682325"
     }
   ],
   "pending_msgs": [],
