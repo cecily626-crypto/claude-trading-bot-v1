@@ -256,62 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:25:56.708416"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:25:57.119630"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:44.741503"
-    },
-    {
-      "ev": "skip",
-      "sym": "brett",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:45.170342"
-    },
-    {
-      "ev": "skip",
-      "sym": "mew",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:47.691659"
-    },
-    {
-      "ev": "skip",
-      "sym": "baby",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:49.418560"
-    },
-    {
-      "ev": "skip",
-      "sym": "wojak",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:50.289093"
-    },
-    {
-      "ev": "skip",
-      "sym": "snek",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-10-31T00:30:51.119643"
-    },
-    {
-      "ev": "skip",
       "sym": "ban",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5797,62 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-10-31T07:25:56.858734"
+    },
+    {
+      "ev": "skip",
+      "sym": "brett",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:44.794351"
+    },
+    {
+      "ev": "skip",
+      "sym": "mew",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:47.324245"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:48.973880"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:49.838548"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:50.704277"
+    },
+    {
+      "ev": "skip",
+      "sym": "mubarak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:55.847855"
+    },
+    {
+      "ev": "skip",
+      "sym": "btc",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:56.746491"
+    },
+    {
+      "ev": "skip",
+      "sym": "eth",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-10-31T07:30:57.188457"
     }
   ],
   "pending_msgs": [],
