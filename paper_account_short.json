@@ -256,34 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "snek",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-03T10:35:48.736459"
-    },
-    {
-      "ev": "skip",
-      "sym": "mubarak",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-03T10:35:53.868796"
-    },
-    {
-      "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-03T10:35:54.717677"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-03T10:35:55.149338"
-    },
-    {
-      "ev": "skip",
       "sym": "mew",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5825,34 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-11-03T22:30:55.781840"
+    },
+    {
+      "ev": "skip",
+      "sym": "mew",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-03T22:35:47.050296"
+    },
+    {
+      "ev": "skip",
+      "sym": "baby",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-03T22:35:48.763614"
+    },
+    {
+      "ev": "skip",
+      "sym": "snek",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-03T22:35:50.425690"
+    },
+    {
+      "ev": "skip",
+      "sym": "mubarak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-03T22:35:55.546841"
     }
   ],
   "pending_msgs": [],
