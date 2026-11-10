@@ -256,55 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "gork",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:35:51.845861"
-    },
-    {
-      "ev": "skip",
-      "sym": "giga",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:35:53.136479"
-    },
-    {
-      "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:35:56.977512"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:35:57.420766"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:40:42.936672"
-    },
-    {
-      "ev": "skip",
-      "sym": "bobo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:40:48.872748"
-    },
-    {
-      "ev": "skip",
-      "sym": "gork",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-10T10:40:50.142649"
-    },
-    {
-      "ev": "skip",
       "sym": "giga",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5804,55 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-11-10T20:15:56.839917"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:44.179647"
+    },
+    {
+      "ev": "skip",
+      "sym": "elon",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:49.276618"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:50.111170"
+    },
+    {
+      "ev": "skip",
+      "sym": "gork",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:51.402673"
+    },
+    {
+      "ev": "skip",
+      "sym": "giga",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:52.660623"
+    },
+    {
+      "ev": "skip",
+      "sym": "btc",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:56.476456"
+    },
+    {
+      "ev": "skip",
+      "sym": "eth",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-10T20:20:56.904460"
     }
   ],
   "pending_msgs": [],
