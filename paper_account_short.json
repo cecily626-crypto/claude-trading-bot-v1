@@ -256,69 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:50:54.720573"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:50:55.141485"
-    },
-    {
-      "ev": "skip",
-      "sym": "pepe",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:40.623735"
-    },
-    {
-      "ev": "skip",
-      "sym": "mog",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:42.346658"
-    },
-    {
-      "ev": "skip",
-      "sym": "elon",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:47.542350"
-    },
-    {
-      "ev": "skip",
-      "sym": "bobo",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:48.381544"
-    },
-    {
-      "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:54.830621"
-    },
-    {
-      "ev": "skip",
-      "sym": "eth",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-13T23:55:55.249899"
-    },
-    {
-      "ev": "skip",
-      "sym": "pepe",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-14T00:00:44.183681"
-    },
-    {
-      "ev": "skip",
       "sym": "mog",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5790,69 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-11-14T09:55:57.152247"
+    },
+    {
+      "ev": "skip",
+      "sym": "pepe",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:43.499650"
+    },
+    {
+      "ev": "skip",
+      "sym": "mog",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:45.202550"
+    },
+    {
+      "ev": "skip",
+      "sym": "elon",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:50.337478"
+    },
+    {
+      "ev": "skip",
+      "sym": "wojak",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:50.779263"
+    },
+    {
+      "ev": "skip",
+      "sym": "bobo",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:51.207418"
+    },
+    {
+      "ev": "skip",
+      "sym": "useless",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:52.881575"
+    },
+    {
+      "ev": "skip",
+      "sym": "spx",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:53.331373"
+    },
+    {
+      "ev": "skip",
+      "sym": "btc",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:57.567268"
+    },
+    {
+      "ev": "skip",
+      "sym": "eth",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-14T10:00:57.979431"
     }
   ],
   "pending_msgs": [],
