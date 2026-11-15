@@ -597,3 +597,5 @@ ts_utc,strategy,event,symbol,dir,price,notional,pnl_usd,pnl_pct,why,opened_ts
 2026-11-14T20:00:34.482701,S1_trend_breakout,open,spx,-1,0.302,230.62,,,,2026-11-14T20:00:34.482581
 2026-11-14T20:00:37.026486,S1_trend_breakout,open,goatseus,-1,0.01092,230.60,,,,2026-11-14T20:00:37.026391
 2026-11-15T00:00:34.935121,S1_trend_breakout,open,useless,-1,0.09932,235.72,,,,2026-11-15T00:00:34.934906
+2026-11-15T04:00:37.017990,S1_trend_breakout,open,troll,-1,0.022333,51.80,,,,2026-11-15T04:00:37.017890
+2026-11-15T04:00:52.411653,S2_short,close,troll,-1,0.022333,,4.1389,0.060178,s1,2026-11-14T16:05:51.114746
