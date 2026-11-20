@@ -256,13 +256,6 @@
   "log": [
     {
       "ev": "skip",
-      "sym": "btc",
-      "dir": -1,
-      "why": "paused",
-      "ts": "2026-11-18T18:30:56.842313"
-    },
-    {
-      "ev": "skip",
       "sym": "pepe",
       "dir": -1,
       "why": "paused",
@@ -5853,6 +5846,13 @@
       "dir": -1,
       "why": "paused",
       "ts": "2026-11-20T19:40:54.657710"
+    },
+    {
+      "ev": "skip",
+      "sym": "btc",
+      "dir": -1,
+      "why": "paused",
+      "ts": "2026-11-20T19:45:56.109762"
     }
   ],
   "pending_msgs": [],
